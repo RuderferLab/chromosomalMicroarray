@@ -133,15 +133,17 @@ def age_size():
 
     float_df = DataFrame(df[['kb','age']], dtype=float)
 
-    float_df = float_df.loc[float_df['kb']<20000]
+    #float_df = float_df.loc[float_df['kb']<20000]
 
-    sns.regplot(x='kb', y='age', data=float_df)
+    float_df['log10_kb']=np.log10(float_df['kb'])
+
+    sns.regplot(x='log10_kb', y='age', data=float_df, lowess=True)
     plt.savefig(sys.argv[2])
     plt.clf()
 
 if __name__ == "__main__":
     #age_ind()
-    age_res()
+    #age_res()
     #age_res_type()
     #phe_res_type()
-    #age_size()
+    age_size()
