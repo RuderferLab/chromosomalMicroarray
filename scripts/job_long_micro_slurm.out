@@ -1,0 +1,420 @@
+     NOTE_ID        GRID  ENTRY_DATE  Result    size location  \
+0  750505267  R200004487  2016-07-14  Normal       -        -   
+1  708903182  R200076169  2017-06-19  Normal       -        -   
+2  765017068  R200139815  2016-04-09  Normal       -        -   
+3  774178575  R200149667  2018-02-14  Normal       -        -   
+4  702602436  R200153289  2016-10-24    Gain  2.7 Mb    17p12   
+
+                                         result_text  \
+0                                      Normal female   
+1                                        Normal male   
+2                                      Normal female   
+3                                        Normal male   
+4  Abnormal for a single copy gain of 2.7 Mb with...   
+
+                                              interp  \
+0  SNP chromosomal microarray analysis (CMA) of t...   
+1  SNP chromosomal microarray analysis (CMA) of t...   
+2  SNP chromosomal microarray analysis (CMA) of t...   
+3  SNP chromosomal microarray analysis (CMA) of t...   
+4  SNP chromosomal microarray analysis (CMA) of t...   
+
+                               indication  \
+0          IUGR, small head circumference   
+1             Anomalies of hands and feet   
+2                     Developmental delay   
+3                     Developmental delay   
+4  Failure to thrive, developmental delay   
+
+                                              Method  BP_start    BP_end  \
+0  Microarray platform: Affymetrix CytoScanTM HD ...         -         -   
+1  Microarray platform: Affymetrix CytoScanTM HD ...         -         -   
+2  Microarray platform: Affymetrix CytoScanTM HD ...         -         -   
+3  Microarray platform: Affymetrix CytoScanTM HD ...         -         -   
+4  Microarray platform: Affymetrix CytoScanTM HD ...  12589012  15228334   
+
+                                   ISCN  
+0                         arr(1-22,X)x2  
+1                    arr(1-22)x2,(XY)x1  
+2                         arr(1-22,X)x2  
+3                    arr(1-22)x2,(XY)x1  
+4  arr[hg19] 17p12(**ID-NUM_**ID-NUM)x3  
+        NOTE_ID        GRID ENTRY_DATE          Result               size  \
+0     750505267  R200004487 2016-07-14          Normal                  -   
+1     708903182  R200076169 2017-06-19          Normal                  -   
+2     765017068  R200139815 2016-04-09          Normal                  -   
+3     774178575  R200149667 2018-02-14          Normal                  -   
+4     702602436  R200153289 2016-10-24            Gain             2.7 Mb   
+5     700912768  R200203642 2017-04-01          Normal                  -   
+6     105425307  R200246694 2013-04-11          Normal                  -   
+7     728105253  R200249167 2016-11-07          Normal                  -   
+8      50093249  R200253683 2012-08-30          Normal                  -   
+9     682616529  R200322400 2015-07-13          Normal                  -   
+10    771716246  R200341788 2017-06-30          Normal                  -   
+11    753714887  R200368905 2012-10-13          Normal                  -   
+12    696704214  R200376966 2015-10-11          Normal                  -   
+13    699214084  R200382935 2016-04-17          Normal                  -   
+14    775671530  R200431934 2017-07-20            Gain  entire chromosome   
+15    754212125  R200448662 2016-09-04          Normal                  -   
+16     91606202  R200543869 2012-11-17            Loss            13.8 Mb   
+17    771991643  R200591195 2017-12-23  Gain || Mosaic              56 Mb   
+18     66436564  R200598290 2012-09-08          Normal                  -   
+19    765604909  R200641644 2015-09-04            Loss             1.5 Mb   
+20    690003883  R200663490 2016-10-24          Normal                  -   
+21    757004794  R200663911 2017-02-24          Normal                  -   
+22    756016401  R200712092 2017-02-11          Normal                  -   
+23    704605876  R200819617 2016-07-23          Normal                  -   
+24    769461623  R200869848 2018-05-14    Loss || Gain            25.3 Mb   
+25    762413883  R200948216 2016-09-30          Normal                  -   
+26    767801792  R201000808 2015-05-10          Normal                  -   
+27    135524890  R201039631 2012-12-21          Normal                  -   
+28    720315512  R201049438 2015-10-22            Gain              93 kb   
+29    697016027  R201103101 2015-11-09          Normal                  -   
+...         ...         ...        ...             ...                ...   
+2358  772847641  R298407332 2017-12-24          Normal                  -   
+2359  668705514  R298493319 2016-08-13          Normal                  -   
+2360  127818063  R298506370 2012-08-15            Loss             1.4 Mb   
+2361  766214378  R298509064 2015-07-27            Gain             655 kb   
+2362   42000358  R298586072 2012-04-06            Gain             1.1 Mb   
+2363  746513285  R298597064 2016-04-26          Normal                  -   
+2364  767701097  R298627806 2016-09-12          Normal                  -   
+2365  768201272  R298638377 2017-11-22          Normal                  -   
+2366  763114634  R298640771 2016-06-09            Gain             1.3 Mb   
+2367  141228534  R298692707 2013-04-27          Normal                  -   
+2368  761114664  R298816179 2015-08-17          Normal                  -   
+2369  776540671  R299099424 2017-10-06          Normal                  -   
+2370  758307242  R299157681 2017-05-22          Normal                  -   
+2371  772310475  R299167888 2017-09-08            Gain               1 Mb   
+2372   23983725  R299227346 2013-08-07          Normal                  -   
+2373  714806775  R299279139 2017-05-25          Normal                  -   
+2374  728315214  R299282744 2016-02-13          Normal                  -   
+2375  748616104  R299367856 2016-09-30          Normal                  -   
+2376  710417257  R299368864 2017-02-05    Homozygosity                  -   
+2377  752816217  R299403242 2016-04-29          Normal                  -   
+2378  142825296  R299464329 2012-07-17          Normal                  -   
+2379  774264852  R299471053 2017-05-26          Normal                  -   
+2380  780212397  R299565538 2017-07-09            Loss             704 kb   
+2381  742913498  R299652696 2016-05-08          Normal                  -   
+2382  778998598  R299661476 2017-10-16          Normal                  -   
+2383  772133420  R299713750 2018-02-21          Normal                  -   
+2384  774898683  R299718333 2017-12-27          Normal                  -   
+2385  707704881  R299833343 2016-09-11          Normal                  -   
+2386  778826582  R299887093 2017-09-15            Loss               6 Mb   
+2387  693315874  R299993250 2016-01-16    Homozygosity                  -   
+
+                location                                        result_text  \
+0                      -                                      Normal female   
+1                      -                                        Normal male   
+2                      -                                      Normal female   
+3                      -                                        Normal male   
+4                  17p12  Abnormal for a single copy gain of 2.7 Mb with...   
+5                      -                                        Normal male   
+6                      -                                        Normal male   
+7                      -                                        Normal male   
+8                      -                                        NORMAL MALE   
+9                      -                                        Normal male   
+10                     -                                      Normal female   
+11                     -                                        NORMAL MALE   
+12                     -                                        Normal male   
+13                     -                                        Normal male   
+14         chromosome 18  Abnormal for a single copy gain of chromosome 18.   
+15                     -                                        Normal male   
+16             2p21p23.2  ABNORMAL for a single copy LOSS of 13.8 Mb at ...   
+17    16p11.2 to 16q24.3  Abnormal for a mosaic gain of 56 Mb extending ...   
+18                     -                                        NORMAL MALE   
+19               7q11.23  Abnormal for a single copy loss of 1.5 Mb at 7...   
+20                     -                                        Normal male   
+21                     -                                        Normal male   
+22                     -                                      Normal female   
+23                     -                                        Normal male   
+24                  1q44  Abnormal for two abnormalities of chromosme 1:...   
+25                     -                                      Normal female   
+26                     -                                        Normal male   
+27                     -                                      NORMAL FEMALE   
+28               16p13.3  Abnormal for a 93 kb gain at 16p13.3 with uncl...   
+29                     -                                      Normal female   
+...                  ...                                                ...   
+2358                   -                                      Normal female   
+2359                   -                                        Normal male   
+2360             7q11.23  Abnormal for a single copy LOSS of 1.4 Mb at 7...   
+2361      22q11.22q11.23  Abnormal for a 655 kb gain at 22q11.22q11.23 w...   
+2362              2p11.2  Abnormal for 1.1 Mb GAIN at 2p11.2 with unclea...   
+2363                   -                                      Normal female   
+2364                   -                                        Normal male   
+2365                   -                                        Normal male   
+2366                4q24  Abnormal for a 1.3 Mb gain at 4q24 with unclea...   
+2367                   -                                      NORMAL FEMALE   
+2368                   -                                      Normal female   
+2369                   -                                      Normal female   
+2370                   -                                        Normal male   
+2371               10p14  Abnormal for 1 Mb gain at 10p14 with unclearID...   
+2372                   -                                      NORMAL FEMALE   
+2373                   -                                        Normal male   
+2374                   -                                        Normal male   
+2375                   -                                        Normal male   
+2376                   -  Male with increased regions of homozygosity de...   
+2377                   -                                        Normal male   
+2378                   -                                        NORMAL MALE   
+2379                   -                                        Normal male   
+2380      22q11.22q11.23  Abnormal for a 704 kb loss at 22q11.22q11.23 (...   
+2381                   -                                        Normal male   
+2382                   -                                        Normal male   
+2383                   -                                        Normal male   
+2384                   -                                        Normal male   
+2385                   -                                        Normal male   
+2386        15q11.2q13.1           Abnormal for a 6 Mb loss at 15q11.2q13.1   
+2387        6q22.31q23.3  Region of homozygosity detected at 6q22.31q23....   
+
+                                                 interp  \
+0     SNP chromosomal microarray analysis (CMA) of t...   
+1     SNP chromosomal microarray analysis (CMA) of t...   
+2     SNP chromosomal microarray analysis (CMA) of t...   
+3     SNP chromosomal microarray analysis (CMA) of t...   
+4     SNP chromosomal microarray analysis (CMA) of t...   
+5     SNP chromosomal microarray analysis (CMA) of t...   
+6     SNP chromosomal microarray analysis (CMA) of t...   
+7     SNP chromosomal microarray analysis (CMA) of t...   
+8     SNP chromosomal microarray analysis (CMA) of t...   
+9     SNP chromosomal microarray analysis (CMA) of t...   
+10    SNP chromosomal microarray analysis (CMA) of t...   
+11    SNP chromosomal microarray analysis (CMA) of t...   
+12    SNP chromosomal microarray analysis (CMA) of t...   
+13    SNP chromosomal microarray analysis (CMA) of t...   
+14    SNP chromosomal microarray analysis (CMA) of t...   
+15    SNP chromosomal microarray analysis (CMA) of t...   
+16    SNP chromosomal microarray analysis (CMA) of t...   
+17    SNP chromosomal microarray analysis (CMA) of t...   
+18    SNP chromosomal microarray analysis (CMA) of t...   
+19    SNP chromosomal microarray analysis (CMA) of t...   
+20    SNP chromosomal microarray analysis (CMA) of t...   
+21    SNP chromosomal microarray analysis (CMA) of t...   
+22    SNP chromosomal microarray analysis (CMA) of t...   
+23    SNP chromosomal microarray analysis (CMA) of t...   
+24    SNP chromosomal microarray analysis (CMA) of t...   
+25    SNP chromosomal microarray analysis (CMA) of t...   
+26    SNP chromosomal microarray analysis (CMA) of t...   
+27    SNP chromosomal microarray analysis (CMA) of t...   
+28    SNP chromosomal microarray analysis (CMA) of t...   
+29    SNP chromosomal microarray analysis (CMA) of t...   
+...                                                 ...   
+2358  SNP chromosomal microarray analysis (CMA) of t...   
+2359  SNP chromosomal microarray analysis (CMA) of t...   
+2360  SNP chromosomal microarray analysis (CMA) of t...   
+2361  SNP chromosomal microarray analysis (CMA) of t...   
+2362  SNP chromosomal microarray analysis (CMA) of t...   
+2363  SNP chromosomal microarray analysis (CMA) of t...   
+2364  SNP chromosomal microarray analysis (CMA) of t...   
+2365  SNP chromosomal microarray analysis (CMA) of t...   
+2366  SNP chromosomal microarray analysis (CMA) of t...   
+2367  SNP chromosomal microarray analysis (CMA) of t...   
+2368  SNP chromosomal microarray analysis (CMA) of t...   
+2369  SNP chromosomal microarray analysis (CMA) of t...   
+2370  SNP chromosomal microarray analysis (CMA) of t...   
+2371  SNP chromosomal microarray analysis (CMA) of t...   
+2372  SNP chromosomal microarray analysis (CMA) of t...   
+2373  SNP chromosomal microarray analysis (CMA) of t...   
+2374  SNP chromosomal microarray analysis (CMA) of t...   
+2375  SNP chromosomal microarray analysis (CMA) of t...   
+2376  SNP chromosomal microarray analysis (CMA) of t...   
+2377  SNP chromosomal microarray analysis (CMA) of t...   
+2378  SNP chromosomal microarray analysis (CMA) of t...   
+2379  SNP chromosomal microarray analysis (CMA) of t...   
+2380  SNP chromosomal microarray analysis (CMA) of t...   
+2381  SNP chromosomal microarray analysis (CMA) of t...   
+2382  SNP chromosomal microarray analysis (CMA) of t...   
+2383  SNP chromosomal microarray analysis (CMA) of t...   
+2384  SNP chromosomal microarray analysis (CMA) of t...   
+2385  SNP chromosomal microarray analysis (CMA) of t...   
+2386  SNP chromosomal microarray analysis (CMA) of t...   
+2387  SNP chromosomal microarray analysis (CMA) of t...   
+
+                                             indication  \
+0                        IUGR, small head circumference   
+1                           Anomalies of hands and feet   
+2                                   Developmental delay   
+3                                   Developmental delay   
+4                Failure to thrive, developmental delay   
+5                                 Phonological disorder   
+6                              Structural heart disease   
+7                                  Congenital anomalies   
+8                                                Autism   
+9                           Developmental delay, autism   
+10                                  Developmental delay   
+11                              Congenital heart defect   
+12                  Respiratory failure, encephalopathy   
+13    Lack of expected normal physiological developm...   
+14                                 Suspected trisomy 18   
+15    Lack of expected normal physiological developm...   
+16      Congenital heart defect and developmental delay   
+17                                 Congenital anomalies   
+18                                   Delayed milestones   
+19                                   Delayed milestones   
+20                                  developmental delay   
+21                                               Autism   
+22               Omphalocele, dextrocardia, polydactyly   
+23                       Delayed milestone in childhood   
+24          Developmental delay, chromosome abnormality   
+25    Lack of expected normal physiological developm...   
+26             Autism, short stature, hypochondroplasia   
+27                                   Delayed milestones   
+28    Lack of expected normal physiological developm...   
+29    Developmental delay, autism, hearing impairmen...   
+...                                                 ...   
+2358                            Congenital heart defect   
+2359                      Possible Coarctation of aorta   
+2360                                Developmental delay   
+2361                     Mild intellectual disabilities   
+2362                     Autism and developmental delay   
+2363  Patent ductus arteriosus, patent foramen ovale...   
+2364                  Hearing loss, dysmorphic features   
+2365                         Connective tissue disorder   
+2366                                Developmental delay   
+2367                         Micrognathia, cleft p;late   
+2368                                       Microcephaly   
+2369                          Cerebral palsy, dysesthia   
+2370                                      Leg deformity   
+2371  Autism spectrum disorder, attention deficit hy...   
+2372   Intellectual disability, memory loss, regression   
+2373                                           Epilepsy   
+2374                               Prune belly syndrome   
+2375          Multiple fetal anomalies, neonatal demise   
+2376                                  Failure to thrive   
+2377                            Congenital heart defect   
+2378          Seizures, hypoxic ischemic encephalopathy   
+2379                       Speech delay, osteochondroma   
+2380                                Developmental delay   
+2381                                     Autism, ataxia   
+2382                                          Hypotonia   
+2383                            Congenital heart defect   
+2384              Short stature, sensorineural deafness   
+2385              Unspecified intellectual disabilities   
+2386                                           Seizures   
+2387                                Developmental delay   
+
+                                                 Method   ...   1008.0 1009.0  \
+0     Microarray platform: Affymetrix CytoScanTM HD ...   ...      0.0    0.0   
+1     Microarray platform: Affymetrix CytoScanTM HD ...   ...      0.0    0.0   
+2     Microarray platform: Affymetrix CytoScanTM HD ...   ...      0.0    0.0   
+3     Microarray platform: Affymetrix CytoScanTM HD ...   ...      0.0    0.0   
+4     Microarray platform: Affymetrix CytoScanTM HD ...   ...      0.0    0.0   
+5     Microarray platform: Affymetrix CytoScanTM HD ...   ...      0.0    0.0   
+6     Microarray platform: Affymetrix CytoScanTM HD ...   ...      0.0    0.0   
+7     Microarray platform: Affymetrix CytoScanTM HD ...   ...      0.0    0.0   
+8     Microarray platform: Affymetrix CytoScanTM HD ...   ...      0.0    0.0   
+9     Microarray platform: Affymetrix CytoScanTM HD ...   ...      0.0    0.0   
+10    Microarray platform: Affymetrix CytoScanTM HD ...   ...      0.0    0.0   
+11    Microarray platform: Affymetrix CytoScanTM HD ...   ...      1.0    0.0   
+12    Microarray platform: Affymetrix CytoScanTM HD ...   ...      0.0    0.0   
+13    Microarray platform: Affymetrix CytoScanTM HD ...   ...      0.0    0.0   
+14    Microarray platform: Affymetrix CytoScanTM HD ...   ...      NaN    NaN   
+15    Microarray platform: Affymetrix CytoScanTM HD ...   ...      0.0    0.0   
+16    Microarray platform: Affymetrix CytoScanTM HD ...   ...      0.0    0.0   
+17    Microarray platform: Affymetrix CytoScanTM HD ...   ...      NaN    NaN   
+18    Microarray platform: Affymetrix CytoScanTM HD ...   ...      0.0    0.0   
+19    Microarray platform: Affymetrix CytoScanTM HD ...   ...      0.0    0.0   
+20    Microarray platform: Affymetrix CytoScanTM HD ...   ...      0.0    0.0   
+21    Microarray platform: Affymetrix CytoScanTM HD ...   ...      0.0    0.0   
+22    Microarray platform: Affymetrix CytoScanTM HD ...   ...      0.0    1.0   
+23    Microarray platform: Affymetrix CytoScanTM HD ...   ...      0.0    0.0   
+24    Microarray platform: Affymetrix CytoScanTM HD ...   ...      NaN    NaN   
+25    Microarray platform: Affymetrix CytoScanTM HD ...   ...      0.0    0.0   
+26    Microarray platform: Affymetrix CytoScanTM HD ...   ...      0.0    0.0   
+27    Microarray platform: Affymetrix CytoScanTM HD ...   ...      0.0    0.0   
+28    Microarray platform: Affymetrix CytoScanTM HD ...   ...      0.0    0.0   
+29    Microarray platform: Affymetrix CytoScanTM HD ...   ...      0.0    0.0   
+...                                                 ...   ...      ...    ...   
+2358  Microarray platform: Affymetrix CytoScanTM HD ...   ...      0.0    0.0   
+2359  Microarray platform: Affymetrix CytoScanTM HD ...   ...      0.0    0.0   
+2360  Microarray platform: Affymetrix CytoScanTM HD ...   ...      0.0    0.0   
+2361  Microarray platform: Affymetrix CytoScanTM HD ...   ...      0.0    0.0   
+2362  Microarray platform: Affymetrix CytoScanTM HD ...   ...      0.0    0.0   
+2363  Microarray platform: Affymetrix CytoScanTM HD ...   ...      0.0    0.0   
+2364  Microarray platform: Affymetrix CytoScanTM HD ...   ...      0.0    0.0   
+2365  Microarray platform: Affymetrix CytoScanTM HD ...   ...      NaN    NaN   
+2366  Microarray platform: Affymetrix CytoScanTM HD ...   ...      0.0    0.0   
+2367  Microarray platform: Affymetrix CytoScanTM HD ...   ...      0.0    0.0   
+2368  Microarray platform: Affymetrix CytoScanTM HD ...   ...      0.0    0.0   
+2369  Microarray platform: Affymetrix CytoScanTM HD ...   ...      NaN    NaN   
+2370  Microarray platform: Affymetrix CytoScanTM HD ...   ...      0.0    0.0   
+2371  Microarray platform: Affymetrix CytoScanTM HD ...   ...      0.0    0.0   
+2372  Microarray platform: Affymetrix CytoScanTM HD ...   ...      0.0    0.0   
+2373  Microarray platform: Affymetrix CytoScanTM HD ...   ...      0.0    0.0   
+2374  Microarray platform: Affymetrix CytoScanTM HD ...   ...      0.0    0.0   
+2375  Microarray platform: Affymetrix CytoScanTM HD ...   ...      0.0    0.0   
+2376  Microarray platform: Affymetrix CytoScanTM HD ...   ...      0.0    0.0   
+2377  Microarray platform: Affymetrix CytoScanTM HD ...   ...      0.0    0.0   
+2378  Microarray platform: Affymetrix CytoScanTM HD ...   ...      0.0    0.0   
+2379  Microarray platform: Affymetrix CytoScanTM HD ...   ...      NaN    NaN   
+2380  Microarray platform: Affymetrix CytoScanTM HD ...   ...      0.0    0.0   
+2381  Microarray platform: Affymetrix CytoScanTM HD ...   ...      0.0    2.0   
+2382  Microarray platform: Affymetrix CytoScanTM HD ...   ...      NaN    NaN   
+2383  Microarray platform: Affymetrix CytoScanTM HD ...   ...      NaN    NaN   
+2384  Microarray platform: Affymetrix CytoScanTM HD ...   ...      NaN    NaN   
+2385  Microarray platform: Affymetrix CytoScanTM HD ...   ...      0.0    0.0   
+2386  Microarray platform: Affymetrix CytoScanTM HD ...   ...      NaN    NaN   
+2387  Microarray platform: Affymetrix CytoScanTM HD ...   ...      0.0    0.0   
+
+     1010.0  1011.0 1012.0  1013.0  1014.0  1015.0  1019.0  1100.0  
+0       0.0     0.0    0.0     0.0     0.0     0.0     0.0     0.0  
+1       0.0     0.0    0.0     5.0     0.0     0.0     0.0     0.0  
+2       0.0     0.0    0.0     0.0     0.0     0.0     0.0     0.0  
+3       0.0     0.0    0.0     0.0     0.0     0.0     0.0     0.0  
+4       0.0     0.0    0.0     0.0     0.0     0.0     0.0     0.0  
+5       0.0     0.0    0.0     0.0     0.0     0.0     0.0     0.0  
+6       4.0     0.0    0.0     0.0     0.0     0.0     0.0     0.0  
+7       0.0     0.0    0.0     0.0     0.0     0.0     0.0     0.0  
+8       0.0     0.0    0.0     0.0     0.0     0.0     0.0     0.0  
+9       0.0     0.0    0.0     0.0     0.0     0.0     0.0     0.0  
+10      0.0     0.0    0.0     0.0     0.0     0.0     0.0     0.0  
+11      1.0     0.0    0.0    27.0     0.0     2.0     3.0     0.0  
+12      0.0     0.0    0.0     0.0     0.0     0.0     0.0     0.0  
+13      0.0     0.0    0.0     0.0     0.0     0.0     0.0     0.0  
+14      NaN     NaN    NaN     NaN     NaN     NaN     NaN     NaN  
+15      0.0     0.0    0.0     0.0     0.0     0.0     0.0     0.0  
+16      0.0     0.0    0.0     0.0     0.0     0.0     0.0     0.0  
+17      NaN     NaN    NaN     NaN     NaN     NaN     NaN     NaN  
+18      0.0     0.0    0.0     0.0     0.0     0.0     0.0     0.0  
+19      4.0     0.0    0.0     0.0     0.0     0.0     0.0     0.0  
+20      0.0     0.0    0.0     0.0     0.0     0.0     0.0     0.0  
+21      0.0     0.0    0.0     0.0     0.0     0.0     0.0     0.0  
+22      0.0     2.0    0.0     0.0     0.0     0.0     0.0     0.0  
+23      2.0     0.0    0.0     0.0     0.0     0.0     0.0     0.0  
+24      NaN     NaN    NaN     NaN     NaN     NaN     NaN     NaN  
+25      0.0     0.0    0.0     0.0     0.0     0.0     0.0     0.0  
+26      3.0     0.0    0.0     0.0     0.0     0.0     0.0     0.0  
+27      0.0     0.0    0.0     0.0     0.0     0.0     2.0     0.0  
+28      0.0     0.0    0.0     0.0     0.0     0.0     0.0     0.0  
+29      0.0     0.0    0.0     0.0     0.0     0.0     0.0     0.0  
+...     ...     ...    ...     ...     ...     ...     ...     ...  
+2358    0.0     0.0    0.0     0.0     0.0     0.0     0.0     0.0  
+2359    0.0     0.0    0.0     0.0     0.0     0.0     0.0     0.0  
+2360    0.0     0.0    0.0     0.0     0.0     0.0     0.0     0.0  
+2361    0.0     0.0    0.0     0.0     0.0     0.0     0.0     0.0  
+2362    4.0     0.0    0.0     0.0     0.0     0.0     0.0     0.0  
+2363    0.0     0.0    0.0    21.0     0.0     0.0     0.0     0.0  
+2364    0.0     0.0    0.0     0.0     0.0     0.0     0.0     0.0  
+2365    NaN     NaN    NaN     NaN     NaN     NaN     NaN     NaN  
+2366    0.0     0.0    0.0     0.0     0.0     0.0     0.0     0.0  
+2367    5.0     0.0    0.0     0.0     0.0     9.0     2.0     0.0  
+2368    0.0     0.0    0.0     0.0     0.0     0.0     0.0     0.0  
+2369    NaN     NaN    NaN     NaN     NaN     NaN     NaN     NaN  
+2370    0.0     0.0    0.0     0.0     0.0     0.0     0.0     0.0  
+2371    0.0     0.0    0.0     0.0     0.0     0.0    12.0     0.0  
+2372    0.0     0.0    0.0     0.0     0.0     0.0     0.0     0.0  
+2373    0.0     0.0    0.0     0.0     0.0     0.0     0.0     0.0  
+2374    0.0     0.0    0.0     0.0     0.0     0.0     0.0     0.0  
+2375    0.0     0.0    0.0     0.0     0.0     0.0     0.0     0.0  
+2376    0.0     0.0    0.0     1.0     0.0     0.0     0.0     0.0  
+2377    0.0     0.0    0.0     0.0     0.0     0.0     0.0     0.0  
+2378    0.0     0.0    0.0     0.0     0.0     0.0     0.0     0.0  
+2379    NaN     NaN    NaN     NaN     NaN     NaN     NaN     NaN  
+2380    0.0     0.0    0.0     0.0     0.0     0.0     0.0     0.0  
+2381    0.0     0.0    0.0     0.0     0.0     0.0     0.0     0.0  
+2382    NaN     NaN    NaN     NaN     NaN     NaN     NaN     NaN  
+2383    NaN     NaN    NaN     NaN     NaN     NaN     NaN     NaN  
+2384    NaN     NaN    NaN     NaN     NaN     NaN     NaN     NaN  
+2385    0.0     0.0    0.0     0.0     0.0     0.0     0.0     0.0  
+2386    NaN     NaN    NaN     NaN     NaN     NaN     NaN     NaN  
+2387    2.0     0.0    0.0     0.0     0.0     0.0     8.0     0.0  
+
+[2388 rows x 1434 columns]
