@@ -3,15 +3,18 @@ import sys
 import datetime
 
 #NOTE_ID,GRID,ENTRY_DATE,Result,size,location,result_text,interp,indication,Method,BP_start,BP_end,ISCN,unclear,dob,age,years
-def dconvert(d):
+def dconvert_s(d):
     return datetime.datetime.strptime(d,"%Y-%m-%d %H:%M:%S")
+
+def dconvert(d):
+    return datetime.datetime.strptime(d,"%Y-%m-%d")
 
 def create_summary():
     df = pd.read_csv(sys.argv[1])
     #File containing GRID, PHECODE, DATE format for each phecode present for each GRID
     phecodes = pd.read_csv(sys.argv[2])
     records = pd.read_csv(sys.argv[3])
-    records['record_len'] = records['record_len'].fillna(0).astype(int)
+    records['record_len'] = records['diff'].fillna(0).astype(int)
     #Create summary dataframe
     summary = pd.DataFrame()
     summary["GRID"] = df.GRID
@@ -23,7 +26,8 @@ def create_summary():
     summary['unclear'] = df.unclear
     summary["phecode_sum"] = 0#df.drop(['NOTE_ID','GRID','ENTRY_DATE','Result','size','location','result_text','interp','indication','Method','BP_start','BP_end','ISCN','unclear','dob','age','years'],axis=1).sum(axis=1)
     summary['pretest_sum'] = 0
-    phecodes['date'] = phecodes.date.apply(dconvert)#datetime.datetime.strptime(phecodes.date, "%Y-%m-%d %H:%M:%S")
+    phecodes['date'] = phecodes.date.apply(dconvert)
+    df.ENTRY_DATE = df.ENTRY_DATE.str[:10]
     for grid in summary.GRID.values:
         test_date = datetime.datetime.strptime(df.loc[df.GRID==grid].ENTRY_DATE.values[0], "%Y-%m-%d")
         g_sum = len(phecodes.loc[(phecodes.GRID == grid) & (phecodes.date<test_date)])

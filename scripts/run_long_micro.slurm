@@ -14,4 +14,4 @@
 module load Anaconda3
 
 # Pass your Python script to the Anaconda2 python intepreter for execution
-python long_micro.py ../data/gen_microarray.csv ../data/phecodes_icd910.csv ../data/dob.csv ../data/total_years.csv long_micro.csv
+python long_micro.py ../data/gen_microarray.csv ../data/omop_phecodes.csv ../data/omop_micro_dob.csv ../data/omop_micro_record_len.csv long_omop_micro.csv

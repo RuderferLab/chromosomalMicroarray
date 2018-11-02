@@ -9,6 +9,7 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.naive_bayes import GaussianNB
 from sklearn.model_selection import train_test_split
+from sklearn import preprocessing
 from sklearn.metrics import confusion_matrix, f1_score
 from sklearn.ensemble import RandomForestClassifier
 
@@ -119,10 +120,14 @@ def age_ind():
 
 def predict():
     df = pd.read_csv(sys.argv[1])
-    df['Binary-Result'] = df['result'].apply(biclass)
-    df['Binary-Result'] = np.where(df['Binary-Result']=='Normal', 0, 1)
+    df = df[df.unclear != 1]
+    #df = pd.DataFrame(preprocessing.scale(df),columns = df.columns)
+    #df['Binary-Result'] = df['result'].apply(biclass)
+    #df['Binary-Result'] = np.where(df['Binary-Result']=='Normal', 0, 1)
     print(df.columns.values)
-    X, y = df[['pretest_sum', 'pretest_phecodes_unique']], df['Binary-Result']
+    d = df[['pretest_sum', 'pretest_phecodes_unique']]
+    d = pd.DataFrame(preprocessing.scale(d),columns = d.columns)
+    X, y = d, df['Binary_Result']
     #df[['phecode_sum','pretest_sum','pretest_phecodes_unique','phecodes_unique','unique_categories']]
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2)
     print(X_train.shape)
@@ -158,6 +163,25 @@ def predict():
     print(f1_score(y_test, nb_pred))
     print(confusion_matrix(y_test, nb_pred))
 
+def add_cols():
+    df=pd.read_csv(sys.argv[1])
+    df = df.drop('diff', axis=1)
+    df['record_len'] = df['record_len'].fillna(0)
+    df['Binary_Result'] = df['result'].apply(biclass)
+    df['Binary_Result'] = np.where(df['Binary_Result']=='Normal', 0, 1)
+    df.to_csv(sys.argv[2], index=False)
+
+def sum_result():
+    df = pd.read_csv(sys.argv[1])
+    fig, ax = plt.subplots(figsize=(18,7))
+    sns.boxplot(x="Binary_Result", y="phecode_sum", data=df)
+    plt.savefig(sys.argv[2])
+
+def unique_result():
+    df = pd.read_csv(sys.argv[1])
+    fig, ax = plt.subplots(figsize=(18,7))
+    sns.boxplot(x="Binary_Result", y="phecodes_unique", data=df)
+    plt.savefig(sys.argv[2])
 
 if __name__ =="__main__":
     #region_age()
@@ -170,3 +194,6 @@ if __name__ =="__main__":
     #ty_res()
     #age_ind()
     predict()
+    #add_cols()
+    #sum_result()
+    #unique_result()
