@@ -9,6 +9,9 @@ def uc_filter(d):
 def dconvert(d):
     return datetime.datetime.strptime(d,"%Y-%m-%d")
 
+def dconvert_s(d):
+    return datetime.datetime.strptime(d,"%Y-%m-%d %H:%M:%S.0")
+
 def dextract(d):
     return d.days
 
@@ -22,6 +25,7 @@ def uc_mark(x):
         return 0
 
 if __name__=="__main__":
+    #df = original microarray results
     df = read_csv(sys.argv[1], quotechar="\"", escapechar="\\")
     print(df.head())
     #Filter out all duplicates
@@ -30,7 +34,7 @@ if __name__=="__main__":
     df['unclear'] = df['result_text'].apply(uc_mark)
     ##Load in ICD for given GRIDS
     #icd = read_csv(sys.argv[2])
-    #load in phecodes
+    #load in phecodes (9 and 10)
     phecodes = read_csv(sys.argv[2])
     ##Load in phecode translation
     #phecode_table = read_table(sys.argv[3])
@@ -40,7 +44,7 @@ if __name__=="__main__":
     df = df.merge(dobs, on="GRID", how="inner")
     #Get ages
     df.ENTRY_DATE = df.ENTRY_DATE.apply(dconvert)
-    df.dob = df.dob.apply(dconvert)
+    df.dob = df.dob.apply(dconvert_s)
     df["age"]=(df.ENTRY_DATE-df.dob).apply(dextract)/365
     #Load total years
     total_years = read_csv(sys.argv[4])
