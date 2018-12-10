@@ -9,7 +9,7 @@ def translate_icd9():
     out = open(sys.argv[3], 'w')
     for line in icd:
         line = line.strip("\n")
-        GRID, code, date,_,_ = line.split(',')
+        GRID, code, date,_ = line.split(',')
         if code in phecode_table['icd9'].values:
             row = phecode_table.loc[phecode_table['icd9']==code]
             out.write(GRID+','+date+','+str(row['phewas_code'].values[0])+'\n')
@@ -24,7 +24,7 @@ def translate_icd10():
     out = open(sys.argv[3], 'a')
     for line in icd:
         line = line.strip("\n")
-        GRID, code, date, _, _ = line.split(',')
+        GRID, code, date, _ = line.split(',')
         if code in phecode_table['ICD10CM'].values:
             row = phecode_table.loc[phecode_table['ICD10CM']==code]
             out.write(GRID+','+date+','+str(row['PHECODE'].values[0])+'\n')
