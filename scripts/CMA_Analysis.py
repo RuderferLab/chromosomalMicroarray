@@ -46,6 +46,54 @@ def get_phe_counts(df, pl, name):
     return sum_df
 
 
+def phewas_upper():
+    cc_df = pd.read_csv(sys.argv[1], dtype=str)
+    cc_df = cc_df.drop(cc_df[cc_df.BIRTH_DATETIME=='0'].index)
+    phecodes = pd.read_csv(sys.argv[2], dtype=str)
+    out = sys.argv[3]
+    norm_df = cc_df.loc[cc_df.CC_STATUS=="1.0",:]
+    norm_df['NORM_STATUS'] = norm_df["Result"].apply(binarize_normal)
+    print(norm_df.head())
+    for params in [(cc_df.loc[cc_df.CC_STATUS=="0.0",:],cc_df.loc[cc_df.CC_STATUS=="1.0",:], 'CONTROL', 'CASE', 'cc', cc_df),(norm_df.loc[norm_df.NORM_STATUS==0,:],norm_df.loc[norm_df.NORM_STATUS==1,:], 'NORMAL', 'ABNORMAL', 'norm', norm_df)]:
+        phewas_chi_abstract(params[5], phecodes, out+params[4]+'.csv', [params[0], params[1]], [params[2], params[3]])
+
+def phewas_chi_abstract(df, phecodes, out, pairs, name):
+    out = open(out, 'w')
+    #Identify list of unique phecodes which are also column headers
+    phe_list = [phe for phe in list(phecodes.PHECODE.unique()) if phe in df]
+    res_df = None
+    for pair in [(pairs[0], name[0]+'_COUNT'), (pairs[1], name[1]+'_COUNT')]:
+        if res_df is not None:
+            res_df = res_df.merge(get_phe_counts(pair[0], phe_list, pair[1]), how='inner', on='PHECODE')
+        else:
+            res_df = get_phe_counts(pair[0], phe_list, pair[1])
+    #Get totals for [controls, cases]
+    totals = [pairs[0].shape[0],pairs[1].shape[0]]
+    #Create contingency tables and run chi squared test for each phecode
+    res_df=res_df.set_index(res_df.PHECODE)
+    res_df=res_df.drop('PHECODE',axis=1)
+    out.write('phecode,chi2,p,dof,'+name[0]+'_neg,'+name[1]+'_neg,'+name[0]+'_pos,'+name[1]+'_pos\n')
+    for phecode in phe_list:
+        phecode_counts = list(res_df.loc[phecode])
+        #Use phecode counts (case number) alongside totals (both in format of [control#, case#]) to get the count of presence and absence for each phecode
+        table = [[total-case for total, case in zip(totals, phecode_counts)], phecode_counts]
+        #Calculate the chi2 results
+        try:
+            if table[1][0]>4 and table[1][1]>4:
+                res=chi2_c(table)
+                conc = [phecode,str(res[0]), str(res[1]),str(res[2]),str(table[0][0]),str(table[0][1]), str(table[1][0]),str(table[1][1])]
+                out.write(','.join(conc)+'\n')
+                #if res[1]<=0.0001:
+                #    print("~~~~~~~~~")
+                #    print(phecode)
+                #    print(res)
+                #    print(table)
+                #    print("~~~~~~~~~")
+        except:
+            print("The following phecode had invalid expected frequencies for chi2 contingency test: "+phecode)
+            print("The table for the above phecode is here: ")
+            print(table)
+    out.close()
 
 
 
@@ -227,4 +275,4 @@ if __name__=="__main__":
     #ethn_table()
     #sex_table()
     #phecode_table()
-    phewas_chi()
+    phewas_upper()
