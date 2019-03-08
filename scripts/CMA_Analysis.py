@@ -8,6 +8,7 @@ matplotlib.use("agg")
 import matplotlib.pyplot as plt
 import seaborn as sns
 import datetime
+from scipy.stats import chi2_contingency as chi2_c
 
 def dconvert(d):
     return datetime.datetime.strptime(d,"%Y-%m-%d")
@@ -46,6 +47,43 @@ def get_phe_counts(df, pl, name):
 
 
 
+
+
+def phewas_chi():
+    cc_df = pd.read_csv(sys.argv[1], dtype=str)
+    cc_df = cc_df.drop(cc_df[cc_df.BIRTH_DATETIME=='0'].index)
+    phecodes = pd.read_csv(sys.argv[2], dtype=str)
+    #out = sys.argv[3]
+    #Identify list of unique phecodes which are also column headers
+    phe_list = [phe for phe in list(phecodes.PHECODE.unique()) if phe in cc_df]
+    #phe_list.append('CC_STATUS')
+    df = None
+    #Get sums for each phecode, seperated by case and control
+    for pair in [(cc_df.loc[cc_df.CC_STATUS=="0.0",:], 'CONTROL_COUNT'), (cc_df.loc[cc_df.CC_STATUS=="1.0",:],'CASE_COUNT')]:
+        if df is not None:
+            df = df.merge(get_phe_counts(pair[0], phe_list, pair[1]), how='inner', on='PHECODE')
+        else:
+            df = get_phe_counts(pair[0], phe_list, pair[1])
+    #Get totals for [controls, cases]
+    totals = [cc_df.loc[cc_df.CC_STATUS=="0.0",:].shape[0],cc_df.loc[cc_df.CC_STATUS=="1.0",:].shape[0]]
+    #Create contingency tables and run chi squared test for each phecode
+    df=df.set_index(df.PHECODE)
+    df=df.drop('PHECODE',axis=1)
+    for phecode in phe_list:
+        phecode_counts = list(df.loc[phecode])
+        #Use phecode counts (case number) alongside totals (both in format of [control#, case#]) to get the count of presence and absence for each phecode
+        table = [[total-case for total, case in zip(totals, phecode_counts)], phecode_counts]
+        #Calculate the chi2 results
+        try:
+            if table[1][0]>4 and table[1][1]>4:
+                res=chi2_c(table)
+                if res[1]<=0.1:
+                    print(res)
+                    print(table)
+        except:
+            print("The following phecode had invalid expected frequencies for chi2 contingency test: "+phecode)
+            print("The table for the above phecode is here: ")
+            print(table)
 
 
 def phecode_table():
@@ -181,4 +219,5 @@ if __name__=="__main__":
     #age_table()
     #ethn_table()
     #sex_table()
-    phecode_table()
+    #phecode_table()
+    phewas_chi()
