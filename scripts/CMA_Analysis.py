@@ -53,7 +53,7 @@ def phewas_chi():
     cc_df = pd.read_csv(sys.argv[1], dtype=str)
     cc_df = cc_df.drop(cc_df[cc_df.BIRTH_DATETIME=='0'].index)
     phecodes = pd.read_csv(sys.argv[2], dtype=str)
-    #out = sys.argv[3]
+    out = open(sys.argv[3], 'w')
     #Identify list of unique phecodes which are also column headers
     phe_list = [phe for phe in list(phecodes.PHECODE.unique()) if phe in cc_df]
     #phe_list.append('CC_STATUS')
@@ -69,6 +69,7 @@ def phewas_chi():
     #Create contingency tables and run chi squared test for each phecode
     df=df.set_index(df.PHECODE)
     df=df.drop('PHECODE',axis=1)
+    out.write('phecode,chi2,p,dof,control_neg,case_neg,control_pos,case_pos\n')
     for phecode in phe_list:
         phecode_counts = list(df.loc[phecode])
         #Use phecode counts (case number) alongside totals (both in format of [control#, case#]) to get the count of presence and absence for each phecode
@@ -77,13 +78,19 @@ def phewas_chi():
         try:
             if table[1][0]>4 and table[1][1]>4:
                 res=chi2_c(table)
-                if res[1]<=0.1:
+                conc = [phecode,str(res[0]), str(res[1]),str(res[2]),str(table[0][0]),str(table[0][1]), str(table[1][0]),str(table[1][1])]
+                out.write(','.join(conc)+'\n')
+                if res[1]<=0.0001:
+                    print("~~~~~~~~~")
+                    print(phecode)
                     print(res)
                     print(table)
+                    print("~~~~~~~~~")
         except:
             print("The following phecode had invalid expected frequencies for chi2 contingency test: "+phecode)
             print("The table for the above phecode is here: ")
             print(table)
+    out.close()
 
 
 def phecode_table():
