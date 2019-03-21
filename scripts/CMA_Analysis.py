@@ -52,6 +52,145 @@ def get_phe_counts(df, pl, name):
     return sum_df
 
 
+def principal_component_one_dimension():
+    sns.set()
+    df = pd.read_csv(sys.argv[1], dtype={'location':str, 'Result':str})
+    phecodes = pd.read_csv(sys.argv[2], dtype=str)
+    out = sys.argv[3]
+    phe_list = [phe for phe in list(phecodes.PHECODE.unique()) if phe in df]
+    phedf = df.loc[:, phe_list]
+    phedf[phedf>0] = 1
+    df[phe_list] = phedf
+    #Fit and transform pca
+    #Plot first 10 transformed components in one dimension
+    #Hue by class
+
+#BIRTH_DATETIME,RACE,GENDER,RECORD_LEN
+def component_importance(met):
+    #sns.set()
+    df = pd.read_csv(sys.argv[1], dtype={'location':str, 'Result':str})
+    phecodes = pd.read_csv(sys.argv[2], dtype=str)
+    out = sys.argv[3]
+    phe_list = [phe for phe in list(phecodes.PHECODE.unique()) if phe in df]
+    phedf = df.loc[:, phe_list]
+    phedf[phedf>0] = 1
+    df[phe_list] = phedf
+    print('all loaded')
+    ump = umap.UMAP(metric=met, n_components=20)
+    embedding = ump.fit_transform(df[phe_list])
+    print('umap done')
+    #get the feature importance for umap
+    important_area = df[phe_list+['RACE','GENDER','RECORD_LEN']]
+    ures=important_area.corrwith(embedding)
+    print(ures)
+    ures.to_csv(out+'_umap_importance.csv')
+    #Do pca
+    pca = PCA()
+    pca.fit(df[phe_list])
+    res= pd.DataFrame(pca.components_,columns=df[phe_list].columns,index = ['PC-'+str(i) for i in range(pca.n_components_)])
+    print(res)
+    res.to_csv(out+'_pca_importance.csv')
+
+
+def pca_umap_compare(met):
+    sns.set()
+    df = pd.read_csv(sys.argv[1], dtype={'location':str, 'Result':str})
+    phecodes = pd.read_csv(sys.argv[2], dtype=str)
+    out = sys.argv[3]
+    ##Only consider results which are gain, loss, normal, or 0 (0 is a control)
+    ##df = df.loc[df.Result.isin(['Gain','Loss','Normal','0'])]
+    phe_list = [phe for phe in list(phecodes.PHECODE.unique()) if phe in df]
+    #binarize
+    phedf = df.loc[:, phe_list]
+    phedf[phedf>0] = 1
+    df[phe_list] = phedf
+    print('all loaded')
+    ##Get top 10 cnv's in order to set them not to be grayed out
+    ##top_locations = df.loc[df.Result.isin(['Gain','Loss'])].groupby(['Result','location']).count().GRID.sort_values(ascending=False).reset_index()
+    #UMAP on whole dataset
+    ump = umap.UMAP(metric=met)
+    embedding = ump.fit_transform(df[phe_list])
+    print('umap embedding complete')
+
+    #Vizualization with umap -- set class as case control
+    viz_df = pd.DataFrame(embedding, columns=('ump_1', 'ump_2'))
+    viz_df['class']=pd.Series(df.CC_STATUS.astype(int).astype(str), dtype='category')
+    print(viz_df['class'].unique())
+    fig = plt.gcf()
+    fig.set_size_inches( 16, 10)
+    #sns.pairplot(x_vars=['ump_1'], y_vars=['ump_2'], data=viz_df, hue="class", size=8, plot_kws={'alpha':0.25})
+    sns.scatterplot(x='ump_1', y='ump_2', data=viz_df, hue="class", alpha=0.35)
+    plt.title("Case Control dataset, UMAP embedding: "+met)
+    plt.savefig(out+'_UMAP_Case_Control_'+met+'.png')
+    print('fig 1 done')
+    plt.clf()
+
+    #Same umap embedding -- set class as greyout vs top 10 cnv
+    #Get top non-control/non-normal cnvs
+    df['concat'] = df['location']+'_'+df['Result']
+    loc_res_counts = df.loc[~df.location.isin(['0','-'])].groupby('concat').count().GRID.sort_values(ascending=False).reset_index()
+    top_locs = list(loc_res_counts.loc[loc_res_counts.GRID>4].concat)
+    #Create column with "OTHER" designation for labels outside of top_locs
+    df['filtered_concat'] = 'OTHER'
+    df.loc[df.concat.isin(top_locs),"filtered_concat"] = df.concat
+    ###palette = dict(zip(df.concat.unique(), ['gray']*len(df.concat.unique())))
+    ##Change all elements which are not in the selected (colored) cnv pairs of result/location
+    
+    #Create colormap for values of filtered_concat
+    cmap = sns.color_palette('Spectral', len(top_locs))
+    palette = dict(zip(top_locs, cmap))
+    palette["OTHER"]='gray'
+    print(palette)
+    ##counter = 0
+    ##for l in df.concat.unique():
+    ##    if l in top_locs:
+    ##        palette.update({l:cmap[counter]})
+    ##        counter+=1
+    #Create the actual visualization -- reset the class column with new classes
+    viz_df['class'] = df['filtered_concat']
+    sns.scatterplot(x='ump_1', y='ump_2', data=viz_df.loc[~viz_df['class'].isin(top_locs),:], hue="class", palette=palette, alpha=0.25)
+    sns.scatterplot(x='ump_1', y='ump_2', data=viz_df.loc[viz_df['class'].isin(top_locs),:], hue="class", palette=palette, alpha=0.65)
+    #sns.pairplot(x_vars=['ump_1'], y_vars=['ump_2'], data=viz_df.loc[~viz_df['class'].isin(top_locs),:], hue="class", palette=palette, size=8, plot_kws={'alpha':0.25})
+    #sns.pairplot(x_vars=['ump_1'], y_vars=['ump_2'], data=viz_df.loc[viz_df['class'].isin(top_locs),:], hue="class", palette=palette, size=8, plot_kws={'alpha':0.35})
+    plt.title('Case Control Dataset colored by top CNVs, UMAP: '+met)
+    plt.savefig(out+'_UMAP_CNVs_over_4_'+met+'.png')
+    plt.clf()
+    print('fig 2 done')
+    #Next do PCA
+    #Get proportion of explained variance for pca
+    pca = PCA()
+    pca.fit(df[phe_list])
+    print('first pc fit done')
+    #Plot it
+    plt.plot(np.cumsum(pca.explained_variance_ratio_))
+    plt.xlabel('number of components')
+    plt.ylabel('cumulative explained variance')
+    plt.savefig(out+'_PCA_Explained_variance.png')
+    plt.clf()
+    print('explained variance done')
+    #fit and transform for PCA on two components
+    pca = PCA(n_components=2)
+    pca_embedding = pca.fit_transform(df[phe_list])
+    print('PC fit transform done')
+    #Plot the case vs control on the top 2 PCs
+    viz_df = pd.DataFrame(pca_embedding, columns=('pc_1', 'pc_2'))
+    viz_df['class']=pd.Series(df.CC_STATUS.astype(int).astype(str), dtype='category')
+    sns.scatterplot(x='pc_1', y='pc_2', data=viz_df, hue="class", alpha=0.35)
+    #sns.pairplot(x_vars=['pc_1'], y_vars=['pc_2'], data=viz_df, hue="class", size=8, plot_kws={'alpha':0.25})
+    plt.title("Case control dataset: PCA embedding")
+    plt.savefig(out+'_case_control_PCA.png')
+    plt.clf()
+    print('fig 3 done')
+    #Plot the greyed out everything but top CNVs for top 2 PCs
+    viz_df['class'] = df['filtered_concat']
+    sns.scatterplot(x='pc_1', y='pc_2', data=viz_df.loc[~viz_df['class'].isin(top_locs),:], hue="class", palette=palette, alpha=0.25)
+    sns.scatterplot(x='pc_1', y='pc_2', data=viz_df.loc[viz_df['class'].isin(top_locs),:], hue="class", palette=palette, alpha=0.65)
+    #sns.pairplot(x_vars=['pc_1'], y_vars=['pc_2'], data=viz_df.loc[~viz_df['class'].isin(top_locs),:], hue="class", palette=palette, size=8, plot_kws={'alpha':0.25})
+    #sns.pairplot(x_vars=['pc_1'], y_vars=['pc_2'], data=viz_df.loc[viz_df['class'].isin(top_locs),:], hue="class", palette=palette, size=8, plot_kws={'alpha':0.35})
+    plt.title('Case Control Dataset colored by top CNVs: PCA')
+    plt.savefig(out+'_PCA_top_CNVs.png')
+    plt.clf()
+    print('fig 4 done')
 
 def CNV_colored_plots_smallset(split, mets):
     df = pd.read_csv(sys.argv[1], dtype={'phecode':str, 'location':str, 'Result':str})
@@ -113,8 +252,8 @@ def CNV_colored_plots_smallset(split, mets):
         plt.clf()
 
 
-def CNV_plots_all(split, mets):
-    #Take the 
+#def CNV_plots_all(split, mets):
+#    #Take the 
 
 '''
 Uses phecodes in dataframe to create principal components/UMAP and see if they cluster well
@@ -410,4 +549,6 @@ if __name__=="__main__":
     #phecode_table()
     #phewas_upper()
     #plot_phewas_manhattan()
-    CNV_colored_plots_smallset(True, ['jaccard', 'cosine', 'hamming', 'dice', 'correlation', 'russellrao', 'euclidean', 'yule'])
+    #CNV_colored_plots_smallset(True, ['jaccard', 'cosine', 'hamming', 'dice', 'correlation', 'russellrao', 'euclidean', 'yule'])
+    #pca_umap_compare('jaccard')
+    component_importance('jaccard')
