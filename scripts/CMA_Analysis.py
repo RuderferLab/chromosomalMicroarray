@@ -5,6 +5,7 @@ import umap
 from sklearn.decomposition import PCA
 import statsmodels.formula.api as smf
 import statsmodels.genmod.families.family as fam
+import math
 import matplotlib
 matplotlib.use("agg")
 import matplotlib.pyplot as plt
@@ -52,7 +53,42 @@ def get_phe_counts(df, pl, name):
     return sum_df
 
 
-def principal_component_one_dimension():
+'''
+Input:
+    components: num_subjects x num_comp+1 dataframe which is transformed into embeddings of original data, along with a column labelled `class` which contains the targets
+    out: where to write files to
+'''
+def abstracted_one_dimension(components, out):
+    sns.set()
+    components = components.sort_values(by="class").reset_index()
+    fig=plt.gcf()
+    fig.set_size_inches(20, 16)
+    for component in [x for x in list(components.columns.values) if x!='class']:
+        sns.scatterplot(x=components.index.values, y=component, hue="class", data=components)
+        plt.title(component)
+        plt.savefig(out+'_'+component+'.png')
+        plt.clf()
+
+
+#df phecodes out n_comp
+def run_one_dim_umap(met):
+    df = pd.read_csv(sys.argv[1], dtype={'location':str, 'Result':str})
+    phecodes = pd.read_csv(sys.argv[2], dtype=str)
+    out = sys.argv[3]
+    n_comp = sys.argv[4]
+    phe_list = [phe for phe in list(phecodes.PHECODE.unique()) if phe in df]
+    phedf = df.loc[:, phe_list]
+    #Fit umap
+    ump = umap.UMAP(metric=met, n_components=int(n_comp))
+    embedding = ump.fit_transform(df[phe_list])
+    comp_df = pd.DataFrame(embedding, columns=['ump_'+str(i+1) for i in range(int(n_comp))])
+    #set class label
+    comp_df['class'] = df['CC_STATUS']
+    #call abstracted function
+    abstracted_one_dimension(comp_df, out)
+
+
+def principal_component_one_dimension(num_comp):
     sns.set()
     df = pd.read_csv(sys.argv[1], dtype={'location':str, 'Result':str})
     phecodes = pd.read_csv(sys.argv[2], dtype=str)
@@ -61,9 +97,66 @@ def principal_component_one_dimension():
     phedf = df.loc[:, phe_list]
     phedf[phedf>0] = 1
     df[phe_list] = phedf
+    print('loaded')
     #Fit and transform pca
-    #Plot first 10 transformed components in one dimension
+    pca = PCA(n_components=num_comp)
+    embedding = pca.fit_transform(phedf)
+    pc_df = pd.DataFrame(embedding, columns = ['PC-'+str(ind+1) for ind in range(num_comp)])
+    pc_df['CC_STATUS'] = df.loc[:,"CC_STATUS"]
+    #Plot first num_comp transformed components in one dimension
     #Hue by class
+    pc_df = pc_df.sort_values(by="CC_STATUS").reset_index()
+    fig = plt.gcf()
+    fig.set_size_inches(20, 16)
+    for component in range(1,num_comp+1):
+        sns.scatterplot(x=pc_df.index.values, y="PC-"+str(component), hue="CC_STATUS", data=pc_df)
+        plt.savefig(out+'_PC-'+str(component)+'.png')
+        plt.clf()
+
+def top_correlations(should_cutoff, limit):
+    corr_df = pd.read_csv(sys.argv[1], index_col=0)
+    out = sys.argv[2]
+    if should_cutoff:
+        corr_df = corr_df.iloc[:limit,:]
+    #Sort the dataframe by the correlation pairs
+    components = []
+    corrs = []
+    names = []
+    for v in corr_df.index.values:
+        #Get top 3 for this component
+        top_5 = corr_df.loc[v,:].abs().sort_values(ascending=False).iloc[:5].index.values
+        #add values to corresponding lists
+        components=components+[v]*5
+        names=names+list(top_5)
+        corrs=corrs+[corr_df.loc[v, phec] for phec in top_5]
+        print(list(top_5))
+        print([corr_df.loc[v, phec] for phec in top_5])
+    #Create final listing
+    print(components)
+    print(corrs)
+    res = pd.DataFrame([components, names, corrs], index=['component','name','correlation']).transpose()
+    res.to_csv(out, index=False)
+
+
+def heatmap_corrdf():
+    #Read df in
+    corr_df = pd.read_csv(sys.argv[1], index_col=0)
+    out = sys.argv[2]
+    #Limit the size to some extent?
+    #Create heatmap
+    sns.set()
+    fig = plt.gcf()
+    fig.set_size_inches(50, 20)
+    for i in range(int(math.floor(corr_df.shape[1]/100))):
+        sns.heatmap(corr_df.iloc[:,i*100:(i+1)*100], vmin=-1, vmax=1, center=0, cmap='RdBu')
+        plt.savefig(out+'_'+str(i*100)+'_'+str((i+1)*100)+'.png')
+        plt.clf()
+    #Now plot remaining section
+    sns.heatmap(corr_df.iloc[:,int(math.floor(corr_df.shape[1]/100))*100:], center=0, vmin=0, vmax=1, cmap='RdBu')
+    plt.savefig(out+'_'+str(math.floor(corr_df.shape[1]/100))+'_END.png')
+    plt.clf()
+
+
 
 #BIRTH_DATETIME,RACE,GENDER,RECORD_LEN
 def component_importance(met):
@@ -81,7 +174,11 @@ def component_importance(met):
     print('umap done')
     #get the feature importance for umap
     important_area = df[phe_list+['RACE','GENDER','RECORD_LEN']]
-    ures=important_area.corrwith(embedding)
+    important_area['RACE'] = important_area['RACE'].astype('category').cat.codes
+    important_area['GENDER'] = important_area['GENDER'].astype('category').cat.codes
+    #ures=important_area.corrwith(pd.DataFrame(embedding, columns=['ump_'+str(i+1) for i in range(20)]))
+    umap_df=pd.DataFrame(embedding, columns=['ump_'+str(i+1) for i in range(20)])
+    ures=pd.concat([important_area, umap_df], axis=1, keys=['important_area', 'umap_df']).corr().loc['umap_df', 'important_area']
     print(ures)
     ures.to_csv(out+'_umap_importance.csv')
     #Do pca
@@ -551,4 +648,8 @@ if __name__=="__main__":
     #plot_phewas_manhattan()
     #CNV_colored_plots_smallset(True, ['jaccard', 'cosine', 'hamming', 'dice', 'correlation', 'russellrao', 'euclidean', 'yule'])
     #pca_umap_compare('jaccard')
-    component_importance('jaccard')
+    #component_importance('jaccard')
+    #heatmap_corrdf()
+    #top_correlations(True, 20)
+    #principal_component_one_dimension(10)
+    run_one_dim_umap('jaccard')
