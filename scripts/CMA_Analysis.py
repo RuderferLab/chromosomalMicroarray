@@ -13,9 +13,9 @@ import seaborn as sns
 import datetime
 from scipy.stats import chi2_contingency as chi2_c
 from assocplots.manhattan import *
-import datashader as ds
-import datashader.utils as utils
-import datashader.transfer_functions as tf
+#import datashader as ds
+#import datashader.utils as utils
+#import datashader.transfer_functions as tf
 
 def dconvert(d):
     return datetime.datetime.strptime(d,"%Y-%m-%d")
@@ -156,6 +156,78 @@ def heatmap_corrdf():
     plt.savefig(out+'_'+str(math.floor(corr_df.shape[1]/100))+'_END.png')
     plt.clf()
 
+
+
+def run_all_correlation(metric,n_comp):
+    df = pd.read_csv(sys.argv[1], dtype={'location':str, 'Result':str})
+    df=df.drop(df[df.BIRTH_DATETIME=='0'].index)
+    phecodes = pd.read_csv(sys.argv[2], dtype=str)
+    out = sys.argv[3]
+    phe_list = [phe for phe in list(phecodes.PHECODE.unique()) if phe in df]
+    phedf = df.loc[:, phe_list]
+    phedf[phedf>0] = 1
+    df[phe_list] = phedf
+    print('loaded')
+    #Get age
+    df['AGE']= pd.to_datetime(df['BIRTH_DATETIME'].str[:10], format='%Y-%m-%d')
+    df['AGE']=(datetime.datetime.now()-df['AGE']).astype('timedelta64[Y]')
+    print('got age')
+    #Create location+result
+    df['loc_res']=df['location']+' '+df['Result']
+    #Run umap
+    umap_df = umap_components(metric, n_comp, df, phe_list)
+    print('umap done')
+    #Run pca
+    pca_df, pca = pca_components(df, phe_list, n_comp)
+    print('pca done')
+    #get umap and pca correlation matrices
+    #pca_corr = pd.DataFrame(pca.components_,columns=df[phe_list].columns,index = ['PC-'+str(i+1) for i in range(pca.n_components_)])
+    umap_corr_res = cov_correlation_components(umap_df, df, phe_list)
+    pca_corr_res = cov_correlation_components(pca_df, df, phe_list)
+    print('correlation done')
+    #Plot heatmaps and save results
+    sns.set()
+    fig = plt.gcf()
+    fig.set_size_inches(50,20)
+    sns.heatmap(umap_corr_res, vmin=-1, vmax=1, center=0, cmap='RdBu')
+    plt.savefig(out+'_UMAP.png')
+    plt.clf()
+    sns.heatmap(pca_corr_res, vmin=-1, vmax=1, center=0, cmap='RdBu')
+    plt.savefig(out+'_PCA.png')
+    print('figs done')
+    plt.clf()
+
+
+'''
+Input: Dataframe which contains each component, as well as the dataframe with the demographic info
+'''
+def cov_correlation_components(component_df, full_df, phe_list):
+    covs = ['RACE', 'GENDER', 'RECORD_LEN', 'AGE', 'CC_STATUS', 'loc_res']
+    important_area=full_df[covs]
+    important_area.loc[:,'RACE']=important_area['RACE'].astype('category')
+    important_area.loc[:,'GENDER']=important_area['GENDER'].astype('category')
+    #Get correlation
+    cres=pd.concat([important_area, component_df], axis=1, keys=['important_area', 'comp_df']).corr().loc['comp_df', 'important_area']
+    return cres
+
+
+def pca_components(df, phe_list, n_comp):
+    pca = PCA(n_components=n_comp)
+    pca.fit(df[phe_list])
+    #res= pd.DataFrame(pca.components_,columns=df[phe_list].columns,index = ['PC-'+str(i) for i in range(df, phe_list, pca.n_components_)])
+    return (pd.DataFrame(pca.transform(df[phe_list]), columns=['PC-'+str(i+1) for i in range(n_comp)]), pca)
+
+
+'''
+Input: String specifying metric and int specifying number of components.
+Output: Dataframe containing each component, labelled from 1 to num_components as ump_n, where n is the number. Also the dataframe with demo info
+'''
+def umap_components(met, n_comp, df, phe_list):
+    ump = umap.UMAP(metric=met, n_components=n_comp)
+    embedding = ump.fit_transform(df[phe_list])
+    umap_df = pd.DataFrame(embedding, columns=['ump_'+str(i+1) for i in range(n_comp)])
+    #Return transformed dataframe
+    return umap_df
 
 
 #BIRTH_DATETIME,RACE,GENDER,RECORD_LEN
@@ -652,4 +724,5 @@ if __name__=="__main__":
     #heatmap_corrdf()
     #top_correlations(True, 20)
     #principal_component_one_dimension(10)
-    run_one_dim_umap('jaccard')
+    #run_one_dim_umap('jaccard')
+    run_all_correlation('jaccard', 20)
