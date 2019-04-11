@@ -5,7 +5,7 @@ from sklearn.decomposition import PCA
 import pandas as pd
 from sklearn.model_selection import train_test_split
 from sklearn.model_selection import GridSearchCV, cross_val_score, KFold
-from sklearn.metrics import confusion_matrix
+from sklearn.metrics import confusion_matrix, classification_report
 from sklearn.naive_bayes import BernoulliNB
 from sklearn.linear_model import LogisticRegression
 from sklearn.svm import LinearSVC
@@ -17,6 +17,7 @@ matplotlib.use("agg")
 import matplotlib.pyplot as plt
 import seaborn as sns
 import datetime
+import time
 from scipy.stats import chi2_contingency as chi2_c
 
 #Plan: Reduce full feature set using PCA to size of 50, UMAP to 10
@@ -94,6 +95,8 @@ def pairplot_covs(df, to_compare, focus, out):
 
 def sklearn_pipeline(df, target, out):
     #Define the pipeline
+    print('Beginning pipeline')
+    start = time.time()
     pca = PCA()
     ump = umap.UMAP()
     pipe = Pipeline(steps=[('pca', pca), ('umap', ump), ('classify', None)])
@@ -129,12 +132,26 @@ def sklearn_pipeline(df, target, out):
     splits = KFold(n_splits=8, shuffle=True)
     grid = GridSearchCV(pipe, cv=splits, scoring='f1')
     #Fit it all!
-    grid.fit(X_train, X_test)
+    grid.fit(X_train, y_train)
     final_results_df = pd.DataFrame(grid.cv_results_)
+    final_results_df.to_csv(out, index=False)
     #Show best estimator and results
-    #
+    best_est = grid.best_estimator_
+    print(best_est)
+    print('\n')
+    print(grid.best_params_)
+    print('\n')
+    print(grid.best_score_)
+    print('\n')
     #Fit pipeline to test set with best parameters from above search
-    #Show confusion matrix, f1 score, and accuracy for final estimator
+    pipe.set_params(grid.best_params_)
+    pipe.fit(X_train, y_train)
+    print('\n')
+    print('Results of best estimator chosen by CV process:\n')
+    print(classification_report(y_test, pipe.predict(X_test)))
+    total = time.time()-start
+    print('Elapsed time:')
+    print(total)
 
 if __name__=='__main__':
     df = pd.read_csv(sys.argv[1], dtype={'location':str, 'Result':str})
@@ -147,7 +164,8 @@ if __name__=='__main__':
     phedf = df.loc[:, phe_list]
     phedf[phedf>0] = 1
     df[phe_list] = phedf
-    #
+    #Run the pipeline
+    sklearn_pipeline(df[phe_list], df['CC_STATUS'], out)
     #######
     #Run process for dimensionality reduction
     #pc_emb,_ = create_pc_embedding(df, phe_list, 50)
