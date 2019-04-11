@@ -52,6 +52,111 @@ def get_phe_counts(df, pl, name):
     sum_df.columns=['PHECODE', name]
     return sum_df
 
+def plot_strange_cluster():
+    print('started')
+    df = pd.read_csv(sys.argv[1], dtype={'location':str, 'Result':str})
+    df=df.drop(df[df.BIRTH_DATETIME=='0'].index)
+    phecodes = pd.read_csv(sys.argv[2], dtype=str)
+    out = sys.argv[3]
+    phe_list=[phe for phe in list(phecodes.PHECODE.unique()) if phe in df]
+    phedf = df.loc[:, phe_list]
+    phedf[phedf>0] = 1
+    df[phe_list] = phedf
+    print('loaded')
+    #Create embeddings
+    pca = PCA(n_components=50, random_state=42)
+    pc_emb = pca.fit_transform(phedf)
+    ump = umap.UMAP(metric='euclidean', n_components=10, random_state=42)
+    ump_emb = ump.fit_transform(pc_emb)
+    print('embedded')
+    #create df
+    reduced_df = pd.DataFrame(ump_emb, columns = ['UMP-'+str(i+1) for i in range(10)])
+    reduced_df['CC_STATUS']=df['CC_STATUS']
+    #Create visualization
+    sns.set()
+    sns.pairplot(reduced_df, hue="CC_STATUS", vars=['UMP-'+str(i+1) for i in range(10)], height=4, markers=['o', 's'], plot_kws=dict(alpha=0.1))
+    plt.savefig(out)
+    print('graphed')
+    #test components
+    reduced_df['newcc']=0
+    reduced_df.loc[reduced_df['UMP-2']<-12, 'newcc']=1
+    df['newcc']=reduced_df['newcc']
+    #plot the distribution of this component
+    #Age
+    df['AGE']= pd.to_datetime(df['BIRTH_DATETIME'].str[:10], format='%Y-%m-%d')
+    df['AGE']=(datetime.datetime.now()-df['AGE']).astype('timedelta64[Y]')
+    sns.set()
+    sns.distplot(df.loc[df['newcc']==0, 'AGE'])
+    sns.distplot(df.loc[df['newcc']==1, 'AGE'])
+    plt.savefig(out+'_age.png')
+    plt.clf()
+    #number of phecodes
+    sns.distplot(df.loc[df['newcc']==0, 'UNIQUE_PHECODES'])
+    sns.distplot(df.loc[df['newcc']==1, 'UNIQUE_PHECODES'])
+    plt.savefig(out+'_unique_phecodes.png')
+    plt.clf()
+
+
+def test_umap_one():
+    print('started')
+    df = pd.read_csv(sys.argv[1], dtype={'location':str, 'Result':str})
+    df=df.drop(df[df.BIRTH_DATETIME=='0'].index)
+    phecodes = pd.read_csv(sys.argv[2], dtype=str)
+    out = sys.argv[3]
+    phe_list=[phe for phe in list(phecodes.PHECODE.unique()) if phe in df]
+    phedf = df.loc[:, phe_list]
+    phedf[phedf>0] = 1
+    df[phe_list] = phedf
+    print('loaded')
+    #Create embeddings
+    pca = PCA(n_components=50, random_state=42)
+    pc_emb = pca.fit_transform(phedf)
+    ump = umap.UMAP(metric='euclidean', n_components=10, random_state=42)
+    ump_emb = ump.fit_transform(pc_emb)
+    print('embedded')
+    #create df
+    reduced_df = pd.DataFrame(ump_emb, columns = ['UMP-'+str(i+1) for i in range(10)])
+    reduced_df['CC_STATUS']=df['CC_STATUS']
+    #Create visualization
+    sns.set()
+    sns.pairplot(reduced_df, hue="CC_STATUS", vars=['UMP-'+str(i+1) for i in range(10)], height=4, markers=['o', 's'], plot_kws=dict(alpha=0.1))
+    plt.savefig(out)
+    print('graphed')
+    #test components
+    reduced_df['newcc']=0
+    reduced_df.loc[reduced_df['UMP-2']<-12, 'newcc']=1
+    df['newcc']=reduced_df['newcc']
+    print('opening file')
+    out_file = open('files/umap_new_cases_chi_phecode_test_2.csv', 'w')
+    out_file.write('phecode,chi2,p,dof,control_neg,case_neg,control_pos,case_pos\n')
+    #Run univariate tests using this newcc col
+    for phecode in phe_list:
+        #Get count of people positive for this phecode in case
+        case_pos = df.loc[(df.newcc==1) & (df[phecode]==1)].shape[0]
+        #Get negative count in case
+        case_neg = df.loc[(df.newcc==1) & (df[phecode]==0)].shape[0]
+        #Get positive control
+        control_pos = df.loc[(df.newcc==0) & (df[phecode]==1)].shape[0]
+        #Get negative control
+        control_neg = df.loc[(df.newcc==0) & (df[phecode]==0)].shape[0]
+        #Run contingency test
+        if case_pos>0 and case_neg>0 and control_pos>0 and control_neg>0:
+            res=chi2_c([[control_neg, case_neg],[control_pos, case_pos]])
+            #Write results
+            out_file.write(','.join([phecode,str(res[0]),str(res[1]),str(res[2]),str(control_neg),str(case_neg),str(control_pos),str(case_pos)]))
+            out_file.write('\n')
+    out_file.close()
+    print('ran phecode tests')
+    #Get age
+    df['AGE']= pd.to_datetime(df['BIRTH_DATETIME'].str[:10], format='%Y-%m-%d')
+    df['AGE']=(datetime.datetime.now()-df['AGE']).astype('timedelta64[Y]')
+    #Run same test procedure for covariates, but do regression (?)
+    print('running regression')
+    mod = smf.glm(formula='newcc ~ AGE + UNIQUE_PHECODES + RACE + GENDER + RECORD_LENGTH_DAYS', data=df, family=fam.Binomial())
+    res = mod.fit()
+    print(res.summary())
+
+
 
 '''
 Input:
@@ -204,8 +309,8 @@ Input: Dataframe which contains each component, as well as the dataframe with th
 def cov_correlation_components(component_df, full_df, phe_list):
     covs = ['RACE', 'GENDER', 'RECORD_LEN', 'AGE', 'CC_STATUS', 'loc_res']
     important_area=full_df[covs]
-    important_area.loc[:,'RACE']=important_area['RACE'].astype('category')
-    important_area.loc[:,'GENDER']=important_area['GENDER'].astype('category')
+    for c in ['RACE', 'GENDER', 'CC_STATUS', 'loc_res']:
+        important_area.loc[:,c]=important_area[c].astype('category').cat.codes
     #Get correlation
     cres=pd.concat([important_area, component_df], axis=1, keys=['important_area', 'comp_df']).corr().loc['comp_df', 'important_area']
     return cres
@@ -722,7 +827,9 @@ if __name__=="__main__":
     #pca_umap_compare('jaccard')
     #component_importance('jaccard')
     #heatmap_corrdf()
-    #top_correlations(True, 20)
+    #top_correlations(False, 20)
     #principal_component_one_dimension(10)
     #run_one_dim_umap('jaccard')
-    run_all_correlation('jaccard', 20)
+    #run_all_correlation('jaccard', 20)
+    #test_umap_one()
+    plot_strange_cluster()
