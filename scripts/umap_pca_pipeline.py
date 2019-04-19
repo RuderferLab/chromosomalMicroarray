@@ -19,6 +19,7 @@ import seaborn as sns
 import datetime
 import time
 from scipy.stats import chi2_contingency as chi2_c
+from sklearn.preprocessing import FunctionTransformer
 
 #Plan: Reduce full feature set using PCA to size of 50, UMAP to 10
 '''
@@ -97,26 +98,49 @@ def sklearn_pipeline(df, target, out):
     #Define the pipeline
     print('Beginning pipeline')
     start = time.time()
-    reduce_dim_pca = [PCA(50), PCA(75), PCA(100), None]
-    reduce_dim_umap = [umap.UMAP(n_components=5), umap.UMAP(n_components=10), umap.UMAP(n_components=15), None]
-    pipe = Pipeline(steps=[('reduce_dim_1', None), ('reduce_dim_2', None), ('classify', None)])
+    reduce_dim_pca = [PCA(50), PCA(75), PCA(100), PCA(250), PCA(500), None]
+    reduce_dim_umap = [umap.UMAP(n_components=5), umap.UMAP(n_components=10), umap.UMAP(n_components=15), umap.UMAP(n_components=25), umap.UMAP(n_components=40), None]
+    #First selector is only the last column, second selector is the selector for all columns but the last column
+    selectors = [FunctionTransformer(lambda x: x[:,-1:]), FunctionTransformer(lambda y: y[:,:-1])]
+    pipe = Pipeline(steps=[('column_selector', None), ('reduce_dim_1', None), ('reduce_dim_2', None), ('classify', None)])
     #Define param grid
     param_grid = [
             {
+                'column_selector': selectors[1],
                 'reduce_dim_1': reduce_dim_pca,
                 'reduce_dim_2': reduce_dim_umap,
                 'classify':[LogisticRegression(), LinearSVC()],
-                'classify__C':[1,10,100]
+                'classify__C':[0.1, 1,10,100]
             },
             {
+                'column_selector': selectors[1],
                 'reduce_dim_1': reduce_dim_pca,
                 'reduce_dim_2': reduce_dim_umap,
                 'classify':[BernoulliNB()],
                 'classify__alpha':[0.1,0.5,1.0]
             },
             {
+                'column_selector': selectors[1],
                 'reduce_dim_1': reduce_dim_pca,
                 'reduce_dim_2': reduce_dim_umap,
+                'classify':[RandomForestClassifier()],
+                'classify__max_depth': [50, 100, 150],
+                'classify__min_samples_leaf': [1, 5],
+                'classify__min_samples_split': [2, 8],
+                'classify__n_estimators': [50, 150]
+            },
+            {
+                'column_selector': selectors[0],
+                'classify':[LogisticRegression(), LinearSVC()],
+                'classify__C':[0.1, 1,10,100]
+            },
+            {
+                'column_selector': selectors[0],
+                'classify':[BernoulliNB()],
+                'classify__alpha':[0.1,0.5,1.0]
+            },
+            {
+                'column_selector': selectors[0],
                 'classify':[RandomForestClassifier()],
                 'classify__max_depth': [50, 100, 150],
                 'classify__min_samples_leaf': [1, 5],
@@ -163,7 +187,7 @@ if __name__=='__main__':
     phedf[phedf>0] = 1
     df[phe_list] = phedf
     #Run the pipeline
-    sklearn_pipeline(df[phe_list], df['CC_STATUS'], out)
+    sklearn_pipeline(df[phe_list+['weight_sum']], df['CC_STATUS'], out)
     #######
     #Run process for dimensionality reduction
     #pc_emb,_ = create_pc_embedding(df, phe_list, 50)
