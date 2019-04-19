@@ -97,40 +97,38 @@ def sklearn_pipeline(df, target, out):
     #Define the pipeline
     print('Beginning pipeline')
     start = time.time()
-    pca = PCA()
-    ump = umap.UMAP()
-    pipe = Pipeline(steps=[('pca', pca), ('umap', ump), ('classify', None)])
+    reduce_dim_pca = [PCA(50), PCA(75), PCA(100), None]
+    reduce_dim_umap = [umap.UMAP(n_components=5), umap.UMAP(n_components=10), umap.UMAP(n_components=15), None]
+    pipe = Pipeline(steps=[('reduce_dim_1', None), ('reduce_dim_2', None), ('classify', None)])
     #Define param grid
-    UMAP_OPTIONS = [5, 10, 15]
-    PCA_OPTIONS = [50, 80, 100]
     param_grid = [
             {
+                'reduce_dim_1': reduce_dim_pca,
+                'reduce_dim_2': reduce_dim_umap,
                 'classify':[LogisticRegression(), LinearSVC()],
-                'pca__n_components':PCA_OPTIONS,
-                'umap__n_components':UMAP_OPTIONS,
-                'classify__C':[0.1,1,10,100]
+                'classify__C':[1,10,100]
             },
             {
+                'reduce_dim_1': reduce_dim_pca,
+                'reduce_dim_2': reduce_dim_umap,
                 'classify':[BernoulliNB()],
-                'pca__n_components':PCA_OPTIONS,
-                'umap__n_components':UMAP_OPTIONS,
-                'classify__alpha':[0,0.5,1.0]
+                'classify__alpha':[0.1,0.5,1.0]
             },
             {
+                'reduce_dim_1': reduce_dim_pca,
+                'reduce_dim_2': reduce_dim_umap,
                 'classify':[RandomForestClassifier()],
-                'pca__n_components':PCA_OPTIONS,
-                'umap__n_components':UMAP_OPTIONS,
-                'classify__max_depth': [50, 70, 100, 150],
-                'min_samples_leaf': [1, 3, 5],
-                'min_samples_split': [2, 4, 8],
-                'n_estimators': [50, 100, 200, 300]
+                'classify__max_depth': [50, 100, 150],
+                'classify__min_samples_leaf': [1, 5],
+                'classify__min_samples_split': [2, 8],
+                'classify__n_estimators': [50, 150]
             }
         ]
     #Split the data into train and test
     X_train, X_test, y_train, y_test = train_test_split(df, target, test_size=0.20)
     #create grid search cv with the above param_grid
-    splits = KFold(n_splits=8, shuffle=True)
-    grid = GridSearchCV(pipe, cv=splits, scoring='f1')
+    splits = KFold(n_splits=4, shuffle=True)
+    grid = GridSearchCV(pipe, cv=splits, scoring=['f1_weighted', 'precision_weighted', 'roc_auc'], refit='precision_weighted', param_grid=param_grid, n_jobs=8)
     #Fit it all!
     grid.fit(X_train, y_train)
     final_results_df = pd.DataFrame(grid.cv_results_)
@@ -144,7 +142,7 @@ def sklearn_pipeline(df, target, out):
     print(grid.best_score_)
     print('\n')
     #Fit pipeline to test set with best parameters from above search
-    pipe.set_params(grid.best_params_)
+    pipe.set_params(**grid.best_params_)
     pipe.fit(X_train, y_train)
     print('\n')
     print('Results of best estimator chosen by CV process:\n')
