@@ -8,7 +8,7 @@ from sklearn.model_selection import GridSearchCV, cross_val_score, KFold
 from sklearn.metrics import confusion_matrix, classification_report, make_scorer
 from sklearn.naive_bayes import BernoulliNB
 from sklearn.linear_model import LogisticRegression
-from sklearn.svm import LinearSVC
+from sklearn.svm import SVC
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.pipeline import Pipeline
 import math
@@ -98,6 +98,9 @@ def pairplot_covs(df, to_compare, focus, out):
 def select_last(x):
     return x[:,-1:]
 
+def select_all_but_last_and_binarize(x):
+    return np.where(x[:,:-1]>0, 1, 0)
+
 def select_all_but_last(x):
     return x[:,:-1]
 
@@ -111,7 +114,10 @@ def tp(y_true, y_pred):
      return confusion_matrix(y_true, y_pred)[1, 1]
 
 def ppv(y_true, y_pred):
-    return tp(y_true, y_pred)/(fp(y_true, y_pred) + tp(y_true, y_pred))
+    if (fp(y_true, y_pred) + tp(y_true, y_pred))>0:
+        return tp(y_true, y_pred)/(fp(y_true, y_pred) + tp(y_true, y_pred))
+    else:
+        return 0
 
 def sklearn_pipeline(df, target, out):
     #Define the pipeline
@@ -120,26 +126,26 @@ def sklearn_pipeline(df, target, out):
     reduce_dim_pca = [PCA(50), PCA(75), PCA(100), None]
     reduce_dim_umap = [umap.UMAP(n_components=5), umap.UMAP(n_components=10), umap.UMAP(n_components=15), None]
     #First selector is only the last column, second selector is the selector for all columns but the last column
-    selectors = [FunctionTransformer(select_last), FunctionTransformer(select_all_but_last)]
+    selectors = [FunctionTransformer(select_last), FunctionTransformer(select_all_but_last), FunctionTransformer(select_all_but_last_and_binarize)]
     pipe = Pipeline(steps=[('column_selector', None), ('reduce_dim_1', None), ('reduce_dim_2', None), ('classify', None)])
     #Define param grid
     param_grid = [
             {
-                'column_selector': [selectors[1]],
+                'column_selector': [selectors[1], selectors[2]],
                 'reduce_dim_1': reduce_dim_pca,
                 'reduce_dim_2': reduce_dim_umap,
-                'classify':[LogisticRegression(), LinearSVC()],
+                'classify':[LogisticRegression(), SVC(probability=True)],
                 'classify__C':[0.1, 1,10,100]
             },
             {
-                'column_selector': [selectors[1]],
+                'column_selector': [selectors[1], selectors[2]],
                 'reduce_dim_1': reduce_dim_pca,
                 'reduce_dim_2': reduce_dim_umap,
                 'classify':[BernoulliNB()],
                 'classify__alpha':[0.1,0.5,1.0]
             },
             {
-                'column_selector': [selectors[1]],
+                'column_selector': [selectors[1], selectors[2]],
                 'reduce_dim_1': reduce_dim_pca,
                 'reduce_dim_2': reduce_dim_umap,
                 'classify':[RandomForestClassifier()],
@@ -150,7 +156,7 @@ def sklearn_pipeline(df, target, out):
             },
             {
                 'column_selector': [selectors[0]],
-                'classify':[LogisticRegression(), LinearSVC()],
+                'classify':[LogisticRegression(), SVC(probability=True)],
                 'classify__C':[0.1, 1,10,100]
             },
             {
@@ -171,7 +177,7 @@ def sklearn_pipeline(df, target, out):
     X_train, X_test, y_train, y_test = train_test_split(df, target, test_size=0.20)
     #create grid search cv with the above param_grid
     splits = KFold(n_splits=4, shuffle=True)
-    score_custom = {'tp': make_scorer(tp), 'tn': make_scorer(tn), 'fp': make_scorer(fp), 'fn': make_scorer(fn), 'precision_micro': 'precision_micro', 'f1_micro': 'f1_micro', 'auc': 'roc_auc', 'brier_score_loss': 'brier_score_loss', 'neg_log_loss': 'neg_log_loss'}
+    score_custom = {'tp': make_scorer(tp), 'tn': make_scorer(tn), 'fp': make_scorer(fp), 'fn': make_scorer(fn), 'precision_micro': 'precision_micro', 'f1_micro': 'f1_micro', 'auc': 'roc_auc', 'brier_score_loss': 'brier_score_loss', 'neg_log_loss': 'neg_log_loss', 'ppv': make_scorer(ppv)}
     grid = GridSearchCV(pipe, cv=splits, scoring=score_custom, refit='brier_score_loss', param_grid=param_grid, n_jobs=12, return_train_score=False)
     #Fit it all!
     grid.fit(X_train, y_train)
@@ -203,9 +209,9 @@ if __name__=='__main__':
     out = sys.argv[3]
     #Binarize and get columns for phecodes
     phe_list = [phe for phe in list(phecodes.PHECODE.unique()) if phe in df]
-    phedf = df.loc[:, phe_list]
-    phedf[phedf>0] = 1
-    df[phe_list] = phedf
+    #phedf = df.loc[:, phe_list]
+    #phedf[phedf>0] = 1
+    #df[phe_list] = phedf
     #Run the pipeline
     sklearn_pipeline(df[phe_list+['weight_sum']], df['CC_STATUS'].astype(int), out)
     #######
