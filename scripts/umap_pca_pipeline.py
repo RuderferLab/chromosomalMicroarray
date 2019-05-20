@@ -98,6 +98,9 @@ def pairplot_covs(df, to_compare, focus, out):
 def select_last(x):
     return x[:,-1:]
 
+def select_all_but_last_and_binarize(x):
+    return np.where(x[:,:-1]>0, 1, 0)
+
 def select_all_but_last(x):
     return x[:,:-1]
 
@@ -120,26 +123,26 @@ def sklearn_pipeline(df, target, out):
     reduce_dim_pca = [PCA(50), PCA(75), PCA(100), PCA(250), PCA(500), None]
     reduce_dim_umap = [umap.UMAP(n_components=5), umap.UMAP(n_components=10), umap.UMAP(n_components=15), umap.UMAP(n_components=25), umap.UMAP(n_components=40), None]
     #First selector is only the last column, second selector is the selector for all columns but the last column
-    selectors = [FunctionTransformer(select_last), FunctionTransformer(select_all_but_last)]
+    selectors = [FunctionTransformer(select_last), FunctionTransformer(select_all_but_last), FunctionTransformer(select_all_but_last_and_binarize)]
     pipe = Pipeline(steps=[('column_selector', None), ('reduce_dim_1', None), ('reduce_dim_2', None), ('classify', None)])
     #Define param grid
     param_grid = [
             {
-                'column_selector': [selectors[1]],
+                'column_selector': [selectors[1], selectors[2]],
                 'reduce_dim_1': reduce_dim_pca,
                 'reduce_dim_2': reduce_dim_umap,
                 'classify':[LogisticRegression(), LinearSVC()],
                 'classify__C':[0.1, 1,10,100]
             },
             {
-                'column_selector': [selectors[1]],
+                'column_selector': [selectors[1], selectors[2]],
                 'reduce_dim_1': reduce_dim_pca,
                 'reduce_dim_2': reduce_dim_umap,
                 'classify':[BernoulliNB()],
                 'classify__alpha':[0.1,0.5,1.0]
             },
             {
-                'column_selector': [selectors[1]],
+                'column_selector': [selectors[1], selectors[2]],
                 'reduce_dim_1': reduce_dim_pca,
                 'reduce_dim_2': reduce_dim_umap,
                 'classify':[RandomForestClassifier()],
