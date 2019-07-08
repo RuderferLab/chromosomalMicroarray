@@ -9,16 +9,18 @@ Gets stats at a certain selection threshold (given as a count of the top n indiv
 '''
 def count_bin_stats(age_bin, df, n):
     #select age bin
-    within_bin_df = df.loc[(df['AGE_YEARS']>=age_bin[0]) & (df['AGE_YEARS']<=age_bin[1])]
+    within_bin_df = df.loc[(df['AGE_YEARS']>=age_bin[0]) & (df['AGE_YEARS']<=age_bin[1])].copy(deep=True)
     within_bin_df['selected'] = 0
     within_bin_nlargest = within_bin_df.nlargest(n, columns='case_prob')
     grids = within_bin_nlargest['GRID']
     within_bin_df.loc[within_bin_df['GRID'].isin(grids), 'selected'] = 1
     #counts
     total_count = within_bin_df.shape[0]
-    genet_status_count = within_bin_df.loc[df['genet_status']==1].shape[0]
-    gclin_count = within_bin_df.loc[df['gClin']==1].shape[0]
-    expanded_count = within_bin_df.loc[df['expanded_genet']==1].shape[0]
+    genet_status_count = within_bin_df.loc[within_bin_df['genet_status']==1].shape[0]
+    gclin_count = within_bin_df.loc[within_bin_df['gClin']==1].shape[0]
+    expanded_count = within_bin_df.loc[within_bin_df['expanded_genet']==1].shape[0]
+    biovu_count = within_bin_df.loc[within_bin_df['in_biovu']==1].shape[0]
+    biovu_selected_count =  within_bin_df.loc[(within_bin_df['in_biovu']==1)&(within_bin_df['selected']==1)].shape[0]
     #auroc/ap/other stats for the above
     aurocs = []
     aps = []
@@ -53,7 +55,7 @@ def count_bin_stats(age_bin, df, n):
     fps.append(fp)
     fns.append(fn)
     #return
-    return total_count, genet_status_count, gclin_count, expanded_count, aurocs, aps, tps, fps, tns, fns
+    return total_count, genet_status_count, gclin_count, expanded_count, aurocs, aps, tps, fps, tns, fns, biovu_count, biovu_selected_count
 
 
 if __name__=='__main__':
@@ -73,6 +75,8 @@ if __name__=='__main__':
     genet_counts = []
     gclin_counts = []
     expanded_genet_counts = []
+    biovu_counts = []
+    biovu_selected_counts = []
     #
     genet_aurocs = []
     gclin_aurocs = []
@@ -105,11 +109,13 @@ if __name__=='__main__':
     expanded_genet_fns = []
     #
     for ab in big_table['age_bin']:
-        total_count, genet_status_count, gclin_count, expanded_genet_count, aurocs, aps, tps, fps, tns, fns = count_bin_stats(ab, df, n)
+        total_count, genet_status_count, gclin_count, expanded_genet_count, aurocs, aps, tps, fps, tns, fns, bv_count, bv_selected_count = count_bin_stats(ab, df, n)
         total_counts.append(total_count)
         genet_counts.append(genet_status_count)
         gclin_counts.append(gclin_count)
         expanded_genet_counts.append(expanded_genet_count)
+        biovu_counts.append(bv_count)
+        biovu_selected_counts.append(bv_selected_count)
         #
         genet_aurocs.append(aurocs[1])
         gclin_aurocs.append(aurocs[0])
@@ -145,6 +151,8 @@ if __name__=='__main__':
     big_table['genet_status_pos_count'] = genet_counts
     big_table['gclin_pos_count'] = gclin_counts
     big_table['expanded_genet_status_pos_count'] = expanded_genet_counts
+    big_table['biovu_count'] = biovu_counts
+    big_table['biovu_selected_count'] = biovu_selected_counts
     #
     big_table['genet_auroc'] = genet_aurocs
     big_table['gClin_auroc'] = gclin_aurocs
