@@ -39,6 +39,20 @@ def count_bin_stats(age_bin, df, n):
         tns.append(tn)
         fps.append(fp)
         fns.append(fn)
+    #do combined pheno 2 first
+    comb_within_bin_df = within_bin_df.dropna(subset=['combined_pheno_exp'])
+    aurocs.append(roc_auc_score(comb_within_bin_df['combined_pheno_exp'], comb_within_bin_df['case_prob']))
+    aps.append(average_precision_score(comb_within_bin_df['combined_pheno_exp'], comb_within_bin_df['case_prob']))
+    comb_within_bin_nlargest = comb_within_bin_df.nlargest(n, columns='case_prob')
+    comb_within_bin_df['selected'] = 0
+    grids = comb_within_bin_nlargest['GRID']
+    comb_within_bin_df.loc[comb_within_bin_df['GRID'].isin(grids), 'selected'] = 1
+    conf = confusion_matrix(comb_within_bin_df['combined_pheno_exp'], comb_within_bin_df['selected'])
+    tn, fp, fn, tp = conf.ravel()
+    tps.append(tp)
+    tns.append(tn)
+    fps.append(fp)
+    fns.append(fn)
     #do combined pheno seperately because we need to drop elements that are na
     within_bin_df = within_bin_df.dropna(subset=['combined_pheno'])
     aurocs.append(roc_auc_score(within_bin_df['combined_pheno'], within_bin_df['case_prob']))
@@ -70,6 +84,10 @@ if __name__=='__main__':
         df['combined_pheno'] = np.nan
         df.loc[df['genet_status']==0, 'combined_pheno'] = 0
         df.loc[df['gClin']==1, 'combined_pheno'] = 1
+    if 'combined_pheno_exp' not in df:
+        df['combined_pheno_exp'] = np.nan
+        df.loc[df['expanded_genet']==0, 'combined_pheno_exp'] = 0
+        df.loc[df['gClin']==1, 'combined_pheno_exp'] = 1
     #for each age bin, find the count of individuals who belond in it
     total_counts = []
     genet_counts = []
@@ -82,31 +100,37 @@ if __name__=='__main__':
     gclin_aurocs = []
     combined_aurocs = []
     expanded_genet_aurocs = []
+    combined2_aurocs = []
     #
     genet_aps = []
     gclin_aps = []
     combined_aps = []
     expanded_genet_aps = []
+    combined2_aps = []
     #
     genet_tps = []
     gclin_tps = []
     combined_tps = []
     expanded_genet_tps = []
+    combined2_tps = []
     #
     genet_fps = []
     gclin_fps = []
     combined_fps = []
     expanded_genet_fps = []
+    combined2_fps = []
     #
     genet_tns = []
     gclin_tns = []
     combined_tns = []
     expanded_genet_tns = []
+    combined2_tns = []
     #
     genet_fns = []
     gclin_fns = []
     combined_fns = []
     expanded_genet_fns = []
+    combined2_fns = []
     #
     for ab in big_table['age_bin']:
         total_count, genet_status_count, gclin_count, expanded_genet_count, aurocs, aps, tps, fps, tns, fns, bv_count, bv_selected_count = count_bin_stats(ab, df, n)
@@ -119,33 +143,39 @@ if __name__=='__main__':
         #
         genet_aurocs.append(aurocs[1])
         gclin_aurocs.append(aurocs[0])
-        combined_aurocs.append(aurocs[3])
+        combined_aurocs.append(aurocs[4])
         expanded_genet_aurocs.append(aurocs[2])
+        combined2_aurocs.append(aurocs[3])
         #
         genet_aps.append(aps[1])
         gclin_aps.append(aps[0])
-        combined_aps.append(aps[3])
+        combined_aps.append(aps[4])
         expanded_genet_aps.append(aps[2])
+        combined2_aps.append(aps[3])
         #
         genet_tps.append(tps[1])
         gclin_tps.append(tps[0])
-        combined_tps.append(tps[3])
+        combined_tps.append(tps[4])
         expanded_genet_tps.append(tps[2])
+        combined2_tps.append(tps[3])
         #
         genet_fps.append(fps[1])
         gclin_fps.append(fps[0])
-        combined_fps.append(fps[3])
+        combined_fps.append(fps[4])
         expanded_genet_fps.append(fps[2])
+        combined2_fps.append(fps[3])
         #
         genet_tns.append(tns[1])
         gclin_tns.append(tns[0])
-        combined_tns.append(tns[3])
+        combined_tns.append(tns[4])
         expanded_genet_tns.append(tns[2])
+        combined2_tns.append(tns[3])
         #
         genet_fns.append(fns[1])
         gclin_fns.append(fns[0])
-        combined_fns.append(fns[3])
+        combined_fns.append(fns[4])
         expanded_genet_fns.append(fns[2])
+        combined2_fns.append(fns[3])
     #fill out table with values
     big_table['total_count'] = total_counts
     big_table['genet_status_pos_count'] = genet_counts
@@ -158,30 +188,36 @@ if __name__=='__main__':
     big_table['gClin_auroc'] = gclin_aurocs
     big_table['combined_phenotype_auroc'] = combined_aurocs
     big_table['expanded_genet_auroc'] = expanded_genet_aurocs
+    big_table['combined_exp_auroc'] = combined2_aurocs
     #
     big_table['genet_ap'] = genet_aps
     big_table['gClin_ap'] = gclin_aps
     big_table['combined_phenotype_ap'] = combined_aps
     big_table['expanded_genet_ap'] = expanded_genet_aps
+    big_table['combined_exp_ap'] = combined2_aps
     #
     big_table['genet_tp'] = genet_tps
     big_table['gClin_tp'] = gclin_tps
     big_table['combined_phenotype_tp'] = combined_tps
     big_table['expanded_genet_tp'] = expanded_genet_tps
+    big_table['combined_exp_tp'] = combined2_tps
     #
     big_table['genet_fp'] = genet_fps
     big_table['gClin_fp'] = gclin_fps
     big_table['combined_phenotype_fp'] = combined_fps
     big_table['expanded_genet_fp'] = expanded_genet_fps
+    big_table['combined_exp_fp'] = combined2_fps
     #
     big_table['genet_tn'] = genet_tns
     big_table['gClin_tn'] = gclin_tns
     big_table['combined_phenotype_tn'] = combined_tns
     big_table['expanded_genet_tn'] = expanded_genet_tns
+    big_table['combined_exp_tn'] = combined2_tns
     #
     big_table['genet_fn'] = genet_fns
     big_table['gClin_fn'] = gclin_fns
     big_table['combined_phenotype_fn'] = combined_fns
     big_table['expanded_genet_fn'] = expanded_genet_fns
+    big_table['combined_exp_fn'] = combined2_fns
     #write out
     big_table.to_csv(sys.argv[3], index=False)
