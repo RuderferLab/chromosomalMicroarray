@@ -5,7 +5,7 @@ from sklearn.decomposition import PCA
 import pandas as pd
 from sklearn.model_selection import train_test_split
 from sklearn.model_selection import GridSearchCV, cross_val_score, KFold
-from sklearn.metrics import confusion_matrix, classification_report, make_scorer
+from sklearn.metrics import confusion_matrix, classification_report, make_scorer, roc_auc_score
 from sklearn.naive_bayes import BernoulliNB
 from sklearn.linear_model import LogisticRegression
 from sklearn.svm import SVC
@@ -20,6 +20,7 @@ import datetime
 import time
 from scipy.stats import chi2_contingency as chi2_c
 from sklearn.preprocessing import FunctionTransformer
+from sklearn.ensemble import GradientBoostingClassifier
 
 #Plan: Reduce full feature set using PCA to size of 50, UMAP to 10
 '''
@@ -123,62 +124,70 @@ def sklearn_pipeline(df, target, out):
     #Define the pipeline
     print('Beginning pipeline')
     start = time.time()
-    reduce_dim_pca = [PCA(50), PCA(75), PCA(100), None]
+    reduce_dim_pca = [PCA(50), PCA(75), PCA(100), PCA(), None]
     reduce_dim_umap = [umap.UMAP(n_components=5), umap.UMAP(n_components=10), umap.UMAP(n_components=15), None]
     #First selector is only the last column, second selector is the selector for all columns but the last column
-    selectors = [FunctionTransformer(select_last), FunctionTransformer(select_all_but_last), FunctionTransformer(select_all_but_last_and_binarize)]
+    selectors = [FunctionTransformer(select_last, validate=True), FunctionTransformer(select_all_but_last, validate=True), FunctionTransformer(select_all_but_last_and_binarize, validate=True)]
     pipe = Pipeline(steps=[('column_selector', None), ('reduce_dim_1', None), ('reduce_dim_2', None), ('classify', None)])
     #Define param grid
     param_grid = [
             {
                 'column_selector': [selectors[1], selectors[2]],
                 'reduce_dim_1': reduce_dim_pca,
-                'reduce_dim_2': reduce_dim_umap,
-                'classify':[LogisticRegression(), SVC(probability=True)],
+                #'reduce_dim_2': reduce_dim_umap,
+                'classify':[LogisticRegression(solver='lbfgs')],#, SVC(probability=True)],
                 'classify__C':[0.1, 1,10,100]
             },
             {
                 'column_selector': [selectors[1], selectors[2]],
                 'reduce_dim_1': reduce_dim_pca,
-                'reduce_dim_2': reduce_dim_umap,
-                'classify':[BernoulliNB()],
-                'classify__alpha':[0.1,0.5,1.0]
+                #'reduce_dim_2': reduce_dim_umap,
+                'classify':[RandomForestClassifier()],
+                'classify__max_depth': [100, 150, 200],
+                'classify__min_samples_leaf': [1, 5],
+                'classify__min_samples_split': [2, 8],
+                'classify__n_estimators': [600]
             },
             {
                 'column_selector': [selectors[1], selectors[2]],
-                'reduce_dim_1': reduce_dim_pca,
-                'reduce_dim_2': reduce_dim_umap,
-                'classify':[RandomForestClassifier()],
-                'classify__max_depth': [50, 100, 150],
-                'classify__min_samples_leaf': [1, 3, 5],
-                'classify__min_samples_split': [2, 4, 8],
-                'classify__n_estimators': [50, 100, 150]
+                'reduce_dim_1': reduce_dim_pca, 
+                #'reduce_dim_2': reduce_dim_umap,
+                'classify':[GradientBoostingClassifier()],
+                'classify__max_depth': [100, 150, 200],
+                'classify__min_samples_leaf': [1, 5],
+                'classify__min_samples_split': [2, 8],
+                'classify__n_estimators': [600],
+                'classify__subsample': [0.8, 1.0]
             },
             {
                 'column_selector': [selectors[0]],
-                'classify':[LogisticRegression(), SVC(probability=True)],
+                'classify':[LogisticRegression(solver='lbfgs')],#, SVC(probability=True)],
                 'classify__C':[0.1, 1,10,100]
             },
             {
                 'column_selector': [selectors[0]],
-                'classify':[BernoulliNB()],
-                'classify__alpha':[0.1,0.5,1.0]
+                'classify':[GradientBoostingClassifier()],
+                'classify__max_depth': [100, 150, 200],
+                'classify__min_samples_leaf': [1, 5],
+                'classify__min_samples_split': [2, 8],
+                'classify__n_estimators': [600],
+                'classify__subsample': [0.8, 1.0]
             },
             {
                 'column_selector': [selectors[0]],
                 'classify':[RandomForestClassifier()],
-                'classify__max_depth': [50, 100, 150],
-                'classify__min_samples_leaf': [1, 3, 5],
-                'classify__min_samples_split': [2, 4, 8],
-                'classify__n_estimators': [50, 100, 150]
+                'classify__max_depth': [100, 150, 200],
+                'classify__min_samples_leaf': [1, 5],
+                'classify__min_samples_split': [2, 8],
+                'classify__n_estimators': [600]
             }
         ]
     #Split the data into train and test
     X_train, X_test, y_train, y_test = train_test_split(df, target, test_size=0.20)
     #create grid search cv with the above param_grid
     splits = KFold(n_splits=4, shuffle=True)
-    score_custom = {'tp': make_scorer(tp), 'tn': make_scorer(tn), 'fp': make_scorer(fp), 'fn': make_scorer(fn), 'precision_micro': 'precision_micro', 'f1_micro': 'f1_micro', 'auc': 'roc_auc', 'brier_score_loss': 'brier_score_loss', 'neg_log_loss': 'neg_log_loss', 'ppv': make_scorer(ppv)}
-    grid = GridSearchCV(pipe, cv=splits, scoring=score_custom, refit='brier_score_loss', param_grid=param_grid, n_jobs=12, return_train_score=False)
+    score_custom = {'tp': make_scorer(tp), 'tn': make_scorer(tn), 'fp': make_scorer(fp), 'fn': make_scorer(fn), 'precision_micro': 'precision_micro', 'f1': 'f1', 'auc': 'roc_auc', 'brier_score_loss': 'brier_score_loss', 'neg_log_loss': 'neg_log_loss', 'ppv': make_scorer(ppv)}
+    grid = GridSearchCV(pipe, cv=splits, scoring=score_custom, refit='f1', param_grid=param_grid, n_jobs=12, return_train_score=False)
     #Fit it all!
     grid.fit(X_train, y_train)
     final_results_df = pd.DataFrame(grid.cv_results_)
@@ -196,7 +205,10 @@ def sklearn_pipeline(df, target, out):
     pipe.fit(X_train, y_train)
     print('\n')
     print('Results of best estimator chosen by CV process:\n')
-    print(classification_report(y_test, pipe.predict(X_test)))
+    preds=pipe.predict(X_test)
+    print(classification_report(y_test, preds))
+    print('roc:')
+    print(roc_auc_score(y_test, preds))
     total = time.time()-start
     print('Elapsed time:')
     print(total)

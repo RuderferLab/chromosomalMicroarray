@@ -40,7 +40,7 @@ def count_bin_stats(age_bin, df, n):
         fps.append(fp)
         fns.append(fn)
     #do combined pheno 2 first
-    comb_within_bin_df = within_bin_df.dropna(subset=['combined_pheno_exp'])
+    comb_within_bin_df = within_bin_df.dropna(subset=['combined_pheno_exp']).copy(deep=True)
     aurocs.append(roc_auc_score(comb_within_bin_df['combined_pheno_exp'], comb_within_bin_df['case_prob']))
     aps.append(average_precision_score(comb_within_bin_df['combined_pheno_exp'], comb_within_bin_df['case_prob']))
     comb_within_bin_nlargest = comb_within_bin_df.nlargest(n, columns='case_prob')

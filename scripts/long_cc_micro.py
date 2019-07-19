@@ -36,8 +36,8 @@ if __name__=="__main__":
     demog = read_csv(sys.argv[2])
     df = df.merge(demog, on="GRID", how="outer")
     #load in phecodes (9 and 10)
-    phecodes = read_csv(sys.argv[3])#, names=['GRID', 'CODE', 'ENTRY_DATE'])
-    phecodes.columns = ['GRID', 'CODE', 'ENTRY_DATE']
+    phecodes = read_csv(sys.argv[3], dtype=str)#, names=['GRID', 'CODE', 'ENTRY_DATE'])
+    phecodes.columns = ['GRID', 'CODE']#, 'ENTRY_DATE']
     phecodes_group = phecodes.groupby(['GRID','CODE']).size().unstack().fillna(0).astype(int).reset_index()
     df = df.merge(phecodes_group, on="GRID", how="left")
     df[phecodes.CODE.unique()] = df[phecodes.CODE.unique()].fillna(0).astype(int)

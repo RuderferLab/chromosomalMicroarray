@@ -832,4 +832,4 @@ if __name__=="__main__":
     #run_one_dim_umap('jaccard')
     #run_all_correlation('jaccard', 20)
     #test_umap_one()
-    plot_strange_cluster()
+    #plot_strange_cluster()
