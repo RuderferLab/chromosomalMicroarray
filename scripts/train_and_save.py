@@ -31,6 +31,7 @@ if __name__=='__main__':
     print(fv_df.shape)
     #fit random forest model with predetermined hyperparams on CC
     clf = RandomForestClassifier(max_depth=150, min_samples_leaf=1, min_samples_split=4, n_estimators=100)
+    #clf = RandomForestClassifier(max_depth=150, min_samples_leaf=1, min_samples_split=4, n_estimators=100)
     #clf = RandomForestClassifier(max_depth=150, min_samples_leaf=1, min_samples_split=8, n_estimators=150)
     ###clf = RandomForestClassifier(max_depth=100, min_samples_leaf=1, min_samples_split=8, n_estimators=100)
     #pipeline with pca and svc

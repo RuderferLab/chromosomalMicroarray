@@ -23,11 +23,13 @@ if __name__=='__main__':
     #now that the model is loaded, we need to visualize all the trees
     index = 0
     for t in model.estimators_:
+        '''
         plt.clf()
-        plt.figure(figsize=(24,48), dpi=600)
+        plt.figure(figsize=(8,6), dpi=300)
         tree.plot_tree(t, filled=True, feature_names=phe_list, label='root')
         plt.savefig(out+"_"+str(index)+".png")
         plt.clf()
+        '''
         print('index: '+str(index)+' plotted')
         r=export_text(t, feature_names=phe_list)
         if '613.5' in r:
