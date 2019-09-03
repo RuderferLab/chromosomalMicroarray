@@ -68,7 +68,7 @@ def main():
     best_estimator.fit(summed_df.loc[summed_df.GRID.isin(cc_grids),phe_list+['weight_sum']], summed_df.loc[summed_df.GRID.isin(cc_grids),'CC_STATUS'].astype(int))
     print('estimator retrained')
     #predict on frequent visitors set
-    fv_df=summed_df.loc[summed_df['fv_status']==1].copy()
+    fv_df=summed_df.loc[(summed_df['fv_status']==1)&(~summed_df.GRID.isin(cc_grids))].copy()
     fv_df = fv_df.sample(frac=1)
     probs=best_estimator.predict_proba(fv_df[phe_list+['weight_sum']])
     print('prediction complete')
