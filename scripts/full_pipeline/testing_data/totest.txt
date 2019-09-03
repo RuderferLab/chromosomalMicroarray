@@ -1,0 +1,4 @@
+demographic_data: Needs to have 'GRID', 'fv_status', 'GENDER', 'age', 'RECORD_LENGTH_YEARS', 'UNIQUE_YEARS'
+phecodes: Needs to have 'GRID' and 'CODE' (ALSO the CODE's need to match up with codes in weights, and the grids need to match with the demo_data/CMA grids)
+weights: Needs to have 'PHECODE' and 'WEIGHT'
+CMA: Needs to have 'GRID', the other columns are not used in master.py
