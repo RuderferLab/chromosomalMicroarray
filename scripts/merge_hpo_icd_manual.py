@@ -9,14 +9,12 @@ def map_icd_hpo(mapfile):
         hpo=spl[0]
         icd=spl[1]
         if hpo not in mapdict:
-            mapdict[hpo]=icd
+            mapdict[hpo]=[icd]
         else:
-            print(hpo)
-            print(icd)
-            print('multiple mapping error')
+            mapdict[hpo].append(icd)
     return mapdict
 
-
+#full_hpo_omim mapicd9 mapicd10 out
 if __name__=='__main__':
     #Open all relevant files
     full = open(sys.argv[1], 'r')
@@ -35,6 +33,17 @@ if __name__=='__main__':
             #get section of 'full' before first tab -- corresponds to the hpo term
             #strip newline
             line = line.strip('\n')
-            hpo = line.
+            line_arr = line.split('\t')
+            hpo = line_arr[0]
             #get matching icd9 and icd10 terms
+            icd9 = 'NA'
+            icd10 = 'NA'
+            if hpo in hpo_to_icd9:
+                icd9 = hpo_to_icd9[hpo]
+            if hpo in hpo_to_icd10:
+                icd10 = hpo_to_icd10[hpo]
             #append (icd9)\t(icd10)\n when writing to out
+            out.write(line+'\t'+str(icd9)+'\t'+str(icd10)+'\n')
+        counter+=1
+    for f in [full, mapicd9, mapicd10, out]:
+        f.close()
