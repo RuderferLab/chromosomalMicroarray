@@ -24,6 +24,8 @@ steps:
     4. Select best model from the pipeline, retrain it on the whole CC set, and predict on the frequent visitors set
 '''
 
+CALIBRATE=True
+
 #python master.py demographic_data phecodes weights CMA fv_out param_out
 def main():
     #Load in all inputs
@@ -69,8 +71,12 @@ def main():
     print('summed weights; performed ancestry analysis w/codes')
     #Run sklearn pipeline for grid search
     phe_list = [x for x in phecodes.CODE if x in summed_df.columns]
-    results_df, best_estimator = cross_validation_pipeline_probabilistic.sklearn_pipeline(long_df[phe_list+['weight_sum']], long_df['CC_STATUS'].astype(int))
-    results_df.to_csv(param_out,index=False)
+    if CALIBRATE:
+        results_df, best_estimator = cross_validation_pipeline_probabilistic.calibrated_pipeline(long_df[phe_list+['weight_sum']], long_df['CC_STATUS'].astype(int))
+        results_df.to_csv(param_out, index=False)
+    else:
+        results_df, best_estimator = cross_validation_pipeline_probabilistic.sklearn_pipeline(long_df[phe_list+['weight_sum']], long_df['CC_STATUS'].astype(int))
+        results_df.to_csv(param_out,index=False)
     print('pipeline complete')
     #retrain best parameters on entire cc set (new problem, same model)
     best_estimator.fit(long_df.loc[long_df.GRID.isin(cc_grids),phe_list+['weight_sum']], long_df.loc[long_df.GRID.isin(cc_grids),'CC_STATUS'].astype(int))

@@ -21,6 +21,7 @@ import time
 from scipy.stats import chi2_contingency as chi2_c
 from sklearn.preprocessing import FunctionTransformer
 from sklearn.ensemble import GradientBoostingClassifier
+from sklearn.calibration import CalibratedClassifierCV
 
 #Plan: Reduce full feature set using PCA to size of 50, UMAP to 10
 '''
@@ -120,6 +121,102 @@ def ppv(y_true, y_pred):
     else:
         return 0
 
+def calibrated_pipeline(df, target):
+#Define the pipeline
+    print('Beginning pipeline')
+    start = time.time()
+    reduce_dim_pca = [PCA(50), PCA(75), PCA(100), PCA(), None]
+    reduce_dim_umap = [umap.UMAP(n_components=5), umap.UMAP(n_components=10), umap.UMAP(n_components=15), None]
+    #First selector is only the last column, second selector is the selector for all columns but the last column
+    selectors = [FunctionTransformer(select_last, validate=True), FunctionTransformer(select_all_but_last, validate=True), FunctionTransformer(select_all_but_last_and_binarize, validate=True)]
+    pipe = Pipeline(steps=[('column_selector', None), ('reduce_dim_1', None), ('reduce_dim_2', None), ('classify', None)])
+    #Define param grid
+    param_grid = [
+            {
+                'column_selector': [selectors[1], selectors[2]],
+                'reduce_dim_1': reduce_dim_pca,
+                'reduce_dim_2': reduce_dim_umap,
+                'classify':[LogisticRegression(solver='lbfgs')],#, SVC(probability=True)],
+                'classify__C':[0.1, 1,10,100]
+            },
+            {
+                'column_selector': [selectors[1], selectors[2]],
+                'reduce_dim_1': reduce_dim_pca,
+                'reduce_dim_2': reduce_dim_umap,
+                'classify':[CalibratedClassifierCV(RandomForestClassifier(), method='sigmoid', cv=3)],
+                'classify__base_estimator__max_depth': [100, 150, 200],
+                'classify__base_estimator__min_samples_leaf': [1, 5],
+                'classify__base_estimator__min_samples_split': [2, 8],
+                'classify__base_estimator__n_estimators': [600]
+            },
+            {
+                'column_selector': [selectors[1], selectors[2]],
+                'reduce_dim_1': reduce_dim_pca,
+                'reduce_dim_2': reduce_dim_umap,
+                'classify':[CalibratedClassifierCV(GradientBoostingClassifier(), method='sigmoid', cv=3)],
+                'classify__base_estimator__max_depth': [100, 150, 200],
+                'classify__base_estimator__min_samples_leaf': [1, 5],
+                'classify__base_estimator__min_samples_split': [2, 8],
+                'classify__base_estimator__n_estimators': [600],
+                'classify__base_estimator__subsample': [0.8, 1.0]
+            },
+            {
+                'column_selector': [selectors[0]],
+                'classify':[LogisticRegression(solver='lbfgs')],#, SVC(probability=True)],
+                'classify__C':[0.1, 1,10,100]
+            },
+            {
+                'column_selector': [selectors[0]],
+                'classify':[CalibratedClassifierCV(GradientBoostingClassifier(), method='sigmoid', cv=3)],
+                'classify__base_estimator__max_depth': [100, 150, 200],
+                'classify__base_estimator__min_samples_leaf': [1, 5],
+                'classify__base_estimator__min_samples_split': [2, 8],
+                'classify__base_estimator__n_estimators': [600],
+                'classify__base_estimator__subsample': [0.8, 1.0]
+            },
+            {
+                'column_selector': [selectors[0]],
+                'classify':[CalibratedClassifierCV(RandomForestClassifier(), method='sigmoid', cv=3)],
+                'classify__base_estimator__max_depth': [100, 150, 200],
+                'classify__base_estimator__min_samples_leaf': [1, 5],
+                'classify__base_estimator__min_samples_split': [2, 8],
+                'classify__base_estimator__n_estimators': [600]
+            }
+        ]
+    #Split the data into train and test
+    X_train, X_test, y_train, y_test = train_test_split(df, target, test_size=0.20)
+    #create grid search cv with the above param_grid
+    splits = KFold(n_splits=4, shuffle=True)
+    score_custom = {'tp': make_scorer(tp), 'tn': make_scorer(tn), 'fp': make_scorer(fp), 'fn': make_scorer(fn), 'precision_micro': 'precision_micro', 'f1': 'f1', 'auc': 'roc_auc', 'brier_score_loss': 'brier_score_loss', 'neg_log_loss': 'neg_log_loss', 'ppv': make_scorer(ppv)}
+    grid = GridSearchCV(pipe, cv=splits, scoring=score_custom, refit='f1', param_grid=param_grid, n_jobs=12, return_train_score=False)
+    #Fit it all!
+    grid.fit(X_train, y_train)
+    final_results_df = pd.DataFrame(grid.cv_results_)
+    #final_results_df.to_csv(out, index=False)
+    #Show best estimator and results
+    best_est = grid.best_estimator_
+    print(best_est)
+    print('\n')
+    print(grid.best_params_)
+    print('\n')
+    print(grid.best_score_)
+    print('\n')
+    #Fit pipeline to test set with best parameters from above search
+    pipe.set_params(**grid.best_params_)
+    pipe.fit(X_train, y_train)
+    print('\n')
+    print('Results of best estimator chosen by CV process:\n')
+    preds=pipe.predict(X_test)
+    print(classification_report(y_test, preds))
+    print('roc:')
+    print(roc_auc_score(y_test, preds))
+    total = time.time()-start
+    print('Elapsed time:')
+    print(total)
+    return final_results_df, best_est
+
+
+
 def sklearn_pipeline(df, target):
     #Define the pipeline
     print('Beginning pipeline')
@@ -213,6 +310,14 @@ def sklearn_pipeline(df, target):
     print('Elapsed time:')
     print(total)
     return final_results_df, best_est
+
+def calibrate_and_train(features, targets, clf):
+    X_train, X_test, y_train, y_test = train_test_split(features, target, test_size=0.20)
+    cal_clf = CalibratedClassifierCV(clf, method='isotonic', cv=3)
+    cal_clf.fit(X_train, y_train)
+    probs = cal_clf.predict_proba(X_test)
+    #Returns only case probabilities and targets
+    return (probs[:, 1], y_test)
 
 if __name__=='__main__':
     df = pd.read_csv(sys.argv[1], dtype={'location':str, 'Result':str})
