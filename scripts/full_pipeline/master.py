@@ -24,7 +24,21 @@ steps:
     4. Select best model from the pipeline, retrain it on the whole CC set, and predict on the frequent visitors set
 '''
 
-CALIBRATE=True
+CALIBRATE=False
+CENSOR=False
+
+#To censor codes, needs GRID, CODE, and DATE columns
+def censor_codes(code_df, cma_df):
+    #Look at only cma codes
+    cma_codes = code_df.loc[code_df.GRID.isin(cma_df.GRID)]
+    cma_merge = cma_codes.merge(cma_df[['GRID','ENTRY_DATE']], how='left', on='GRID')
+    cma_merge.ENTRY_DATE = pd.to_datetime(cma_merge.ENTRY_DATE)
+    cma_merge.DATE = pd.to_datetime(cma_merge.DATE)
+    #Identify indices to drop
+    drop_inds = cma_merge.loc[cma_merge.ENTRY_DATE<=cma_merge.DATE].index
+    #Drop them
+    return code_df.drop(drop_inds)
+
 
 #python master.py demographic_data phecodes weights CMA fv_out param_out
 def main():
@@ -51,6 +65,11 @@ def main():
     print('matched controls')
     #Create long df for everyone
     phecodes.columns=['GRID', 'CODE']
+    if CENSOR:
+        phecodes.columns=['GRID', 'CODE','DATE']
+        phecodes = censor_codes(phecodes, cma_df)
+    else:
+        phecodes.columns=['GRID', 'CODE']
     phecodes_group = phecodes.groupby(['GRID','CODE']).size().unstack().fillna(0).astype(int).reset_index()
     long_df = demo_df.merge(phecodes_group, on="GRID", how="outer")
     long_df[phecodes.CODE.unique()] = long_df[phecodes.CODE.unique()].fillna(0).astype(int)
