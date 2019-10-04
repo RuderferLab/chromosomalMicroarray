@@ -311,7 +311,7 @@ def sklearn_pipeline(df, target):
     print(total)
     return final_results_df, best_est
 
-def calibrate_and_train(features, targets, clf):
+def calibrate_and_train(features, target, clf):
     X_train, X_test, y_train, y_test = train_test_split(features, target, test_size=0.20)
     cal_clf = CalibratedClassifierCV(clf, method='isotonic', cv=3)
     cal_clf.fit(X_train, y_train)
