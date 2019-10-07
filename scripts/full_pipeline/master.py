@@ -25,7 +25,7 @@ steps:
 '''
 
 CALIBRATE=False
-CENSOR=False
+CENSOR=True
 
 #To censor codes, needs GRID, CODE, and DATE columns
 def censor_codes(code_df, cma_df):
@@ -44,7 +44,7 @@ def censor_codes(code_df, cma_df):
 def main():
     #Load in all inputs
     #Demographic data for entire SD
-    demo_df = pd.read_csv(sys.argv[1])
+    demo_df = pd.read_csv(sys.argv[1], sep='|')
     #Phecodes for entire SD
     phecodes = pd.read_csv(sys.argv[2], dtype=str)
     #Inverse prevalence weights (across frequent visitors) for all phecodes
@@ -60,16 +60,14 @@ def main():
     demo_df['CC_STATUS']=0
     demo_df.loc[demo_df.GRID.isin(cma_df.GRID),'CC_STATUS']=1
     #Match controls 4:1 with the cma recipients
-    case_control_df = match_controls.cc_match(demo_df, demo_df.loc[demo_df.CC_STATUS==1,:])
+    print('Beginning to match controls')
+    case_control_df = match_controls.new_cc_match(demo_df, demo_df.loc[demo_df.CC_STATUS==1,:].copy(), 4)
     cc_grids=list(case_control_df.GRID)
     print('matched controls')
     #Create long df for everyone
-    phecodes.columns=['GRID', 'CODE']
+    phecodes.columns=['PERSON_ID','GRID', 'CODE','DATE']
     if CENSOR:
-        phecodes.columns=['GRID', 'CODE','DATE']
         phecodes = censor_codes(phecodes, cma_df)
-    else:
-        phecodes.columns=['GRID', 'CODE']
     phecodes_group = phecodes.groupby(['GRID','CODE']).size().unstack().fillna(0).astype(int).reset_index()
     long_df = demo_df.merge(phecodes_group, on="GRID", how="outer")
     long_df[phecodes.CODE.unique()] = long_df[phecodes.CODE.unique()].fillna(0).astype(int)
@@ -101,7 +99,7 @@ def main():
     best_estimator.fit(long_df.loc[long_df.GRID.isin(cc_grids),phe_list+['weight_sum']], long_df.loc[long_df.GRID.isin(cc_grids),'CC_STATUS'].astype(int))
     print('estimator retrained')
     #predict on frequent visitors set (minus the cases and controls)
-    fv_df=long_df.loc[(long_df['fv_status']==1)&(~long_df.GRID.isin(cc_grids))].copy()
+    fv_df=long_df.loc[(long_df['FV_STATUS']==1)&(~long_df.GRID.isin(cc_grids))].copy()
     fv_df = fv_df.sample(frac=1)
     probs=best_estimator.predict_proba(fv_df[phe_list+['weight_sum']])
     print('prediction complete')
