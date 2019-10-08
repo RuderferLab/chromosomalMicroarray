@@ -37,7 +37,9 @@ def cc_match(full_pop, cases):
 
 def new_cc_match(full_pop, cases, num_controls):
     all_control = full_pop.loc[~full_pop.GRID.isin(cases.GRID)].copy()
-    case_control_df = pd.DataFrame(columns=full_pop.columns)
+    cols = [x for x in full_pop.columns]
+    cols.append('ab')
+    case_control_df = pd.DataFrame(columns=cols)
     for i in range(len(cases)):
         all_control['ab'] = abs(all_control['RECORD_LENGTH_DAYS']-cases.iloc[i].RECORD_LENGTH_DAYS)
         #Match on gender, age, and unique years
