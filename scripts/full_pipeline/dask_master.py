@@ -56,15 +56,14 @@ def main():
     fv_out = sys.argv[5]
     #Location (string) where the parameters and cross validation results for all tested models should be written to
     param_out = sys.argv[6]
+    cpu_num = int(sys.argv[7])
     print('Loaded args')
     #Set cc_status (case control status) tag in demo_df to indicate which patients received a CMA
-    demo_df['CC_STATUS']=0
-    demo_df.loc[demo_df.GRID.isin(cma_df.GRID),'CC_STATUS']=1
+    ##demo_df['CC_STATUS']=0
+    ##demo_df.loc[demo_df.GRID.isin(cma_df.GRID),'CC_STATUS']=1
     #Match controls 4:1 with the cma recipients
     print('Beginning to match controls')
-    case_control_df = match_controls.new_cc_match(demo_df, demo_df.loc[demo_df.CC_STATUS==1,:].copy(), 4)
-    print(case_control_df.head())
-    cc_grids=list(case_control_df.GRID)
+    cc_grids = match_controls.dask_cc_match(demo_df, cma_df.GRID.unique(), 4)
     print('matched controls')
     #Create long df for case control set
     phecodes.columns=['PERSON_ID','GRID', 'CODE','DATE']
@@ -74,6 +73,8 @@ def main():
     cc_phecodes_group = cc_phecodes.groupby(['GRID','CODE']).size().unstack().fillna(0).astype(int).reset_index()
     long_cc_df = demo_df.loc[demo_df.GRID.isin(cc_grids)].compute().merge(cc_phecodes_group, on="GRID", how="left")
     long_cc_df[cc_phecodes.CODE.unique()] = long_cc_df[cc_phecodes.CODE.unique()].fillna(0).astype(int)
+    long_cc_df['CC_STATUS']=0
+    long_cc_df.loc[long_cc_df.GRID.isin(cma_df.GRID),'CC_STATUS']=1
     print('Created long cc df')
     #Create long df for fv
     fv_phecodes = phecodes.loc[phecodes.GRID.isin(demo_df.loc[demo_df.FV_STATUS==1,'GRID'])].compute().reset_index(drop=True)
@@ -105,7 +106,7 @@ def main():
     phe_list.append('weight_sum')
     #Garbage collect time?
     gc.collect()
-    results_df, best_estimator = cross_validation_pipeline_probabilistic.sklearn_pipeline(long_cc_df[phe_list], long_cc_df['CC_STATUS'].astype(int))
+    results_df, best_estimator = cross_validation_pipeline_probabilistic.sklearn_pipeline(long_cc_df[phe_list], long_cc_df['CC_STATUS'].astype(int), cpu_num)
     results_df.to_csv(param_out,index=False)
     print('pipeline complete')
     ##retrain best parameters on entire cc set (new problem, same model)
