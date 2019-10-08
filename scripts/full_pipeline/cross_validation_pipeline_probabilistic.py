@@ -217,7 +217,7 @@ def calibrated_pipeline(df, target):
 
 
 
-def sklearn_pipeline(df, target):
+def sklearn_pipeline(df, target, cpu_num):
     #Define the pipeline
     print('Beginning pipeline')
     start = time.time()
@@ -284,7 +284,7 @@ def sklearn_pipeline(df, target):
     #create grid search cv with the above param_grid
     splits = KFold(n_splits=4, shuffle=True)
     score_custom = {'tp': make_scorer(tp), 'tn': make_scorer(tn), 'fp': make_scorer(fp), 'fn': make_scorer(fn), 'precision_micro': 'precision_micro', 'f1': 'f1', 'auc': 'roc_auc', 'brier_score_loss': 'brier_score_loss', 'neg_log_loss': 'neg_log_loss', 'ppv': make_scorer(ppv)}
-    grid = GridSearchCV(pipe, cv=splits, scoring=score_custom, refit='f1', param_grid=param_grid, n_jobs=12, return_train_score=False)
+    grid = GridSearchCV(pipe, cv=splits, scoring=score_custom, refit='f1', param_grid=param_grid, n_jobs=cpu_num, return_train_score=False)
     #Fit it all!
     grid.fit(X_train, y_train)
     final_results_df = pd.DataFrame(grid.cv_results_)
