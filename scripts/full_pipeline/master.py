@@ -1,4 +1,5 @@
 import sys
+import gc
 import pandas as pd
 import match_controls
 import cross_validation_pipeline_probabilistic
@@ -55,6 +56,7 @@ def main():
     fv_out = sys.argv[5]
     #Location (string) where the parameters and cross validation results for all tested models should be written to
     param_out = sys.argv[6]
+    num_cpu = int(sys.argv[7])
     print('Loaded args')
     #Set cc_status (case control status) tag in demo_df to indicate which patients received a CMA
     demo_df['CC_STATUS']=0
@@ -62,51 +64,64 @@ def main():
     #Match controls 4:1 with the cma recipients
     print('Beginning to match controls')
     case_control_df = match_controls.new_cc_match(demo_df, demo_df.loc[demo_df.CC_STATUS==1,:].copy(), 4)
+    print(case_control_df.head())
     cc_grids=list(case_control_df.GRID)
     print('matched controls')
-    #Create long df for everyone
+    #Create long df for case control set
     phecodes.columns=['PERSON_ID','GRID', 'CODE','DATE']
+    cc_phecodes = phecodes.loc[phecodes.GRID.isin(cc_grids)].copy().reset_index()
     if CENSOR:
-        phecodes = censor_codes(phecodes, cma_df)
-    phecodes_group = phecodes.groupby(['GRID','CODE']).size().unstack().fillna(0).astype(int).reset_index()
-    long_df = demo_df.merge(phecodes_group, on="GRID", how="outer")
-    long_df[phecodes.CODE.unique()] = long_df[phecodes.CODE.unique()].fillna(0).astype(int)
-    print('created long df')
-    #Get the weight sum (Phenotypic risk score)
+        cc_phecodes = censor_codes(cc_phecodes, cma_df)
+    cc_phecodes_group = cc_phecodes.groupby(['GRID','CODE']).size().unstack().fillna(0).astype(int).reset_index()
+    long_cc_df = demo_df.loc[demo_df.GRID.isin(cc_grids)].merge(cc_phecodes_group, on="GRID", how="left")
+    long_cc_df[cc_phecodes.CODE.unique()] = long_cc_df[cc_phecodes.CODE.unique()].fillna(0).astype(int)
+    print('Created long cc df')
+    ##Create long df for fv
+    #fv_phecodes = phecodes.loc[phecodes.GRID.isin(demo_df.loc[demo_df.FV_STATUS==1,'GRID'])].copy().reset_index()
+    #fv_phecodes_group = fv_phecodes.groupby(['GRID','CODE']).size().unstack().fillna(0).astype(int).reset_index()
+    #long_fv_df = demo_df.loc[demo_df.FV_STATUS==1].merge(fv_phecodes_group, on="GRID", how="left")
+    #long_fv_df[fv_phecodes.CODE.unique()] = long_fv_df[fv_phecodes.CODE.unique()].fillna(0).astype(int)
+    #print('created long fv df')
+    ##Get the weight sum (Phenotypic risk score)
     weights = pd.Series(weight_df.WEIGHT.values,index=weight_df.PHECODE.astype(str)).to_dict()
     print('loaded weights')
     #drop cogenital anomalies (would be cheating to use them)
     for code in ['758', '758.1', '759', '759.1']:
-        if code in long_df:
-            long_df[code]=0
+        if code in long_cc_df:
+            long_cc_df[code]=0
+        #if code in long_fv_df:
+        #    long_fv_df[code]=0
     phe_list = list(weight_df.PHECODE.unique())
     anc_child_dict = create_weight_df.create_ancestry(phe_list)
-    long_df = create_weight_df.leaf_select_codes(long_df, anc_child_dict, phe_list)
-    summed_df = create_weight_df.get_sums(long_df, weights)
+    leaf_select_cc_df = create_weight_df.leaf_select_codes(long_cc_df, anc_child_dict, phe_list)
+    #leaf_select_fv_df = create_weight_df.leaf_select_codes(long_fv_df, anc_child_dict, phe_list)
+    summed_cc_weight = create_weight_df.get_sums(leaf_select_cc_df, weights)['weight_sum']
+    #summed_fv_df = create_weight_df.get_sums(leaf_select_fv_df, weights)
     #copy over weight sum to long df, since we want all phecodes present for the ml process
-    long_df['weight_sum']=summed_df['weight_sum']
+    long_cc_df['weight_sum']=summed_cc_weight
+    #long_fv_df['weight_sum']=summed_fv_df['weight_sum']
     print('summed weights; performed ancestry analysis w/codes')
     #Run sklearn pipeline for grid search
-    phe_list = [x for x in phecodes.CODE if x in summed_df.columns]
-    if CALIBRATE:
-        results_df, best_estimator = cross_validation_pipeline_probabilistic.calibrated_pipeline(long_df[phe_list+['weight_sum']], long_df['CC_STATUS'].astype(int))
-        results_df.to_csv(param_out, index=False)
-    else:
-        results_df, best_estimator = cross_validation_pipeline_probabilistic.sklearn_pipeline(long_df[phe_list+['weight_sum']], long_df['CC_STATUS'].astype(int))
-        results_df.to_csv(param_out,index=False)
+    phe_list = [x for x in list(weight_df.PHECODE.unique()) if x in long_cc_df.columns]
+    #phe_list = [x for x in phecodes.CODE if x in long_cc_df.columns]
+    phe_list.append('weight_sum')
+    #Garbage collect time?
+    gc.collect()
+    results_df, best_estimator = cross_validation_pipeline_probabilistic.sklearn_pipeline(long_cc_df[phe_list], long_cc_df['CC_STATUS'].astype(int), num_cpu)
+    results_df.to_csv(param_out,index=False)
     print('pipeline complete')
-    #retrain best parameters on entire cc set (new problem, same model)
-    best_estimator.fit(long_df.loc[long_df.GRID.isin(cc_grids),phe_list+['weight_sum']], long_df.loc[long_df.GRID.isin(cc_grids),'CC_STATUS'].astype(int))
-    print('estimator retrained')
-    #predict on frequent visitors set (minus the cases and controls)
-    fv_df=long_df.loc[(long_df['FV_STATUS']==1)&(~long_df.GRID.isin(cc_grids))].copy()
-    fv_df = fv_df.sample(frac=1)
-    probs=best_estimator.predict_proba(fv_df[phe_list+['weight_sum']])
-    print('prediction complete')
-    #fv_df['control_prob'] = probs[:, 0]
-    fv_df['case_prob'] = probs[:, 1]
-    fv_df[['GRID','case_prob']].to_csv(fv_out,index=False)
-    print('wrote results')
+    ###retrain best parameters on entire cc set (new problem, same model)
+    #best_estimator.fit(long_cc_df[phe_list], long_cc_df['CC_STATUS'].astype(int))
+    #print('estimator retrained')
+    ##predict on frequent visitors set (minus the cases and controls)
+    #fv_df=long_fv_df.loc[~long_fv_df.GRID.isin(cc_grids)].copy()
+    #fv_df = fv_df.sample(frac=1)
+    #probs=best_estimator.predict_proba(fv_df[phe_list])
+    #print('prediction complete')
+    ##fv_df['control_prob'] = probs[:, 0]
+    #fv_df['case_prob'] = probs[:, 1]
+    #fv_df[['GRID','case_prob']].to_csv(fv_out,index=False)
+    #print('wrote results')
 
 if __name__=='__main__':
     main()
