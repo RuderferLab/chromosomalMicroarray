@@ -70,7 +70,7 @@ def count_bin_stats(age_bin, df, n):
     fps.append(fp)
     fns.append(fn)
     #return
-    return total_count, genet_status_count, gclin_count, expanded_count, aurocs, aps, tps, fps, tns, fns, biovu_count, biovu_selected_count
+    return total_count, genet_status_count, gclin_count, expanded_count, aurocs, aps, tps, fps, tns, fns, biovu_count, biovu_selected_count, gene_cpt_count
 
 '''
 Input:
