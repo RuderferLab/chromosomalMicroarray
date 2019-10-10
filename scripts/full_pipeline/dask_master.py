@@ -69,7 +69,9 @@ def main():
     ##demo_df.loc[demo_df.GRID.isin(cma_df.GRID),'CC_STATUS']=1
     #Match controls 4:1 with the cma recipients
     print('Beginning to match controls')
-    cc_grids = match_controls.dask_cc_match(demo_df, cma_df.GRID.unique(), 4)
+    cc_grids = list(match_controls.dask_cc_match(demo_df, cma_df.GRID.unique(), 4))
+    print(len(cc_grids))
+    print(cma_df.GRID.unique().shape)
     print('matched controls')
     print("--- %s seconds ---" % (time.time() - start_time))
     #Create long df for case control set
