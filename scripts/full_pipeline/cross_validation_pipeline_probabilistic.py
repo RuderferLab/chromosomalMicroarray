@@ -22,6 +22,7 @@ from scipy.stats import chi2_contingency as chi2_c
 from sklearn.preprocessing import FunctionTransformer
 from sklearn.ensemble import GradientBoostingClassifier
 from sklearn.calibration import CalibratedClassifierCV
+from hpsklearn import HyperoptEstimator
 
 #Plan: Reduce full feature set using PCA to size of 50, UMAP to 10
 '''
@@ -304,8 +305,6 @@ def sklearn_pipeline(df, target, cpu_num):
     print('Results of best estimator chosen by CV process:\n')
     preds=pipe.predict(X_test)
     print(classification_report(y_test, preds))
-    print('roc:')
-    print(roc_auc_score(y_test, preds))
     total = time.time()-start
     print('Elapsed time:')
     print(total)
