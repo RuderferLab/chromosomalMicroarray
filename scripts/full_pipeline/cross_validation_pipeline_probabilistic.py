@@ -4,7 +4,7 @@ import umap
 from sklearn.decomposition import PCA
 import pandas as pd
 from sklearn.model_selection import train_test_split
-from sklearn.model_selection import GridSearchCV, cross_val_score, KFold
+from sklearn.model_selection import GridSearchCV, cross_val_score, KFold, RandomizedSearchCV
 from sklearn.metrics import confusion_matrix, classification_report, make_scorer, roc_auc_score
 from sklearn.naive_bayes import BernoulliNB, GaussianNB
 from sklearn.linear_model import LogisticRegression
@@ -297,11 +297,15 @@ def sklearn_pipeline(df, target, cpu_num, search_method):
     print('\n')
     print('Results of best estimator chosen by CV process:\n')
     preds=pipe.predict(X_test)
+    probs = pipe.predict_proba(X_test)[:,1]
+    test_ret_df = pd.DataFrame()
+    test_ret_df['target'] = X_test
+    test_ret_df['case_probs'] = probs
     print(classification_report(y_test, preds))
     total = time.time()-start
     print('Elapsed time:')
     print(total)
-    return final_results_df, best_est
+    return final_results_df, best_est, test_ret_df
 
 def calibrate_and_train(features, target, clf):
     X_train, X_test, y_train, y_test = train_test_split(features, target, test_size=0.20)

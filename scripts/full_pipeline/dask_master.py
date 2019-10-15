@@ -63,6 +63,8 @@ def main():
     #Location (string) where the parameters and cross validation results for all tested models should be written to
     param_out = sys.argv[6]
     cpu_num = int(sys.argv[7])
+    cc_out = sys.argv[8]
+    probs_out = sys.argv[9]
     print('Loaded args')
     print("--- %s seconds ---" % (time.time() - start_time))
     #Set cc_status (case control status) tag in demo_df to indicate which patients received a CMA
@@ -91,6 +93,7 @@ def main():
     long_cc_df.loc[long_cc_df.GRID.isin(cma_df.GRID),'CC_STATUS']=1
     print('Created long cc df')
     print("--- %s seconds ---" % (time.time() - start_time))
+    long_cc_df.to_csv(cc_out, index=False)
     #Create long df for fv
     fv_phecodes = phecodes.loc[phecodes.GRID.isin(demo_df.loc[demo_df.FV_STATUS==1,'GRID'])].compute().reset_index(drop=True)
     fv_phecodes_group = fv_phecodes.groupby(['GRID','CODE']).size().unstack().fillna(0).astype(int).reset_index()
@@ -124,8 +127,9 @@ def main():
     phe_list.append('weight_sum')
     #Garbage collect time?
     gc.collect()
-    results_df, best_estimator = cross_validation_pipeline_probabilistic.sklearn_pipeline(long_cc_df[phe_list], long_cc_df['CC_STATUS'].astype(int), cpu_num, 'random')
+    results_df, best_estimator, test_set_probs = cross_validation_pipeline_probabilistic.sklearn_pipeline(long_cc_df[phe_list], long_cc_df['CC_STATUS'].astype(int), cpu_num, 'random')
     results_df.to_csv(param_out,index=False)
+    test_set_probs.to_csv(probs_out, index=False)
     print('pipeline complete')
     print("--- %s seconds ---" % (time.time() - start_time))
     ##retrain best parameters on entire cc set (new problem, same model)
