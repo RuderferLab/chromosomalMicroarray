@@ -1,6 +1,7 @@
 import sys
 import gc
 import pandas as pd
+from scipy.sparse import csr_matrix
 import dask.dataframe as dd
 import match_controls
 import time
@@ -123,7 +124,7 @@ def main():
     phe_list.append('weight_sum')
     #Garbage collect time?
     gc.collect()
-    results_df, best_estimator = cross_validation_pipeline_probabilistic.sklearn_pipeline(long_cc_df[phe_list], long_cc_df['CC_STATUS'].astype(int), cpu_num)
+    results_df, best_estimator = cross_validation_pipeline_probabilistic.sklearn_pipeline(long_cc_df[phe_list], long_cc_df['CC_STATUS'].astype(int), cpu_num, 'random')
     results_df.to_csv(param_out,index=False)
     print('pipeline complete')
     print("--- %s seconds ---" % (time.time() - start_time))
