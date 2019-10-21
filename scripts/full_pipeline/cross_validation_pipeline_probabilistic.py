@@ -24,7 +24,6 @@ import scipy.stats as st
 from sklearn.preprocessing import FunctionTransformer
 from sklearn.ensemble import GradientBoostingClassifier
 from sklearn.calibration import CalibratedClassifierCV
-from hpsklearn import HyperoptEstimator
 
 #Plan: Reduce full feature set using PCA to size of 50, UMAP to 10
 '''
@@ -134,7 +133,6 @@ def sklearn_pipeline(df, target, cpu_num, search_method):
     selectors = [FunctionTransformer(select_last, validate=True), FunctionTransformer(select_all_but_last, validate=True), FunctionTransformer(select_all_but_last_and_binarize, validate=True)]
     pipe = Pipeline(steps=[('column_selector', None), ('reduce_dim_1', None), ('reduce_dim_2', None), ('classify', None)])
     #Define param grid
-    param_grid = None
     if search_method=='grid':
         param_grid = [
                 {
@@ -193,18 +191,15 @@ def sklearn_pipeline(df, target, cpu_num, search_method):
         param_grid = [
                 {
                     'column_selector': [selectors[1], selectors[2]],
-                    'reduce_dim_1__n_components': sp_randint(25, 1000),
-                    'reduce_dim_2__n_components': sp_randint(25,100),
-                    'reduce_dim_2__n_neighbors': sp_randint(5,100),
-                    'reduce_dim_2__min_dist': st.uniform(scale=.1),
+                    'reduce_dim_1': reduce_dim_pca,
+                    'reduce_dim_2': reduce_dim_umap,
                     'classify':[LogisticRegression(solver='lbfgs')],
                     'classify__C': st.expon(scale=100)
                 },
                 {
                     'column_selector': [selectors[1], selectors[2]],
-                    'reduce_dim_1__n_components': sp_randint(25, 1000),
-                    'reduce_dim_2__n_components': sp_randint(25,100),
-                    'reduce_dim_2__n_neighbors': sp_randint(5,100),
+                    'reduce_dim_1': reduce_dim_pca,
+                    'reduce_dim_2': reduce_dim_umap,
                     'classify':[RandomForestClassifier()],
                     'classify__max_depth': sp_randint(50,500),
                     'classify__min_samples_leaf': sp_randint(1,10),
@@ -213,9 +208,8 @@ def sklearn_pipeline(df, target, cpu_num, search_method):
                 },
                 {
                     'column_selector': [selectors[1], selectors[2]],
-                    'reduce_dim_1__n_components': sp_randint(25, 1000),
-                    'reduce_dim_2__n_components': sp_randint(25,100),
-                    'reduce_dim_2__n_neighbors': sp_randint(5,100),
+                    'reduce_dim_1': reduce_dim_pca,
+                    'reduce_dim_2': reduce_dim_umap,
                     'classify':[GradientBoostingClassifier()],
                     'classify__max_depth': sp_randint(50,500),
                     'classify__min_samples_leaf': sp_randint(1,10), 
@@ -225,18 +219,14 @@ def sklearn_pipeline(df, target, cpu_num, search_method):
                 },
                 {
                     'column_selector': [selectors[1]],
-                    'reduce_dim_1__n_components': sp_randint(25, 1000),
-                    'reduce_dim_2__n_components': sp_randint(25,100),
-                    'reduce_dim_2__n_neighbors': sp_randint(5,100),
-                    'reduce_dim_2__min_dist': st.uniform(scale=.1),
+                    'reduce_dim_1': reduce_dim_pca,
+                    'reduce_dim_2': reduce_dim_umap,
                     'classify':[GaussianNB()]
                 },
                 {
                     'column_selector': [selectors[2]],
-                    'reduce_dim_1__n_components': sp_randint(25, 1000),
-                    'reduce_dim_2__n_components': sp_randint(25,100),
-                    'reduce_dim_2__n_neighbors': sp_randint(5,100),
-                    'reduce_dim_2__min_dist': st.uniform(scale=.1),
+                    'reduce_dim_1': reduce_dim_pca,
+                    'reduce_dim_2': reduce_dim_umap,
                     'classify':[BernoulliNB()],
                     'classify__alpha': st.expon(scale=.1)
                 },                
@@ -272,14 +262,15 @@ def sklearn_pipeline(df, target, cpu_num, search_method):
     #create grid search cv with the above param_grid
     splits = KFold(n_splits=4, shuffle=True)
     score_custom = {'tp': make_scorer(tp), 'tn': make_scorer(tn), 'fp': make_scorer(fp), 'fn': make_scorer(fn), 'precision_micro': 'precision_micro', 'f1': 'f1', 'auc': 'roc_auc', 'brier_score_loss': 'brier_score_loss', 'neg_log_loss': 'neg_log_loss', 'ppv': make_scorer(ppv)}
-    search = None
     if search_method=='grid':
         search = GridSearchCV(pipe, cv=splits, scoring=score_custom, refit='f1', param_grid=param_grid, n_jobs=cpu_num, pre_dispatch=2*cpu_num, return_train_score=False)
     else:
         #number of iterations = number of settings to test
         #Total runs = n_iter*cv (4 in our case)
-        search = RandomizedSearchCV(pipe, cv=splits, scoring=score_custom, refit='f1', param_grid=param_grid, n_jobs=cpu_num, pre_dispatch=2*cpu_num, return_train_score=False, n_iter=500)
+        search = RandomizedSearchCV(pipe, cv=splits, scoring=score_custom, refit='f1', param_distributions=param_grid, n_jobs=cpu_num, pre_dispatch=2*cpu_num, return_train_score=False, n_iter=500)
     #Fit it all!
+    print(search)
+    print(pipe)
     search.fit(X_train, y_train)
     final_results_df = pd.DataFrame(search.cv_results_)
     #final_results_df.to_csv(out, index=False)
@@ -299,7 +290,7 @@ def sklearn_pipeline(df, target, cpu_num, search_method):
     preds=pipe.predict(X_test)
     probs = pipe.predict_proba(X_test)[:,1]
     test_ret_df = pd.DataFrame()
-    test_ret_df['target'] = X_test
+    test_ret_df['target'] = y_test
     test_ret_df['case_probs'] = probs
     print(classification_report(y_test, preds))
     total = time.time()-start
