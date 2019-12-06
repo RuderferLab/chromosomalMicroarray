@@ -55,13 +55,13 @@ def new_cc_match(full_pop, cases, num_controls):
 
 def dask_cc_match(full_pop, case_grids, num_controls):
     all_control = full_pop.loc[~full_pop.GRID.isin(case_grids)]
-    cases = full_pop.loc[full_pop.GRID.isin(case_grids)].compute().reset_index(drop=True)
+    cases = full_pop.loc[full_pop.GRID.isin(case_grids)].copy().reset_index(drop=True)#.compute().reset_index(drop=True)
     case_control_grids = set()
     for i in range(len(cases)):
         #all_control['ab'] = abs(all_control['RECORD_LENGTH_DAYS']-cases.iloc[i].RECORD_LENGTH_DAYS)
-        matching = all_control.loc[(all_control.GENDER==cases.iloc[i].GENDER) & (all_control.AGE_YEARS==cases.iloc[i].AGE_YEARS) & (all_control.UNIQUE_YEARS==cases.iloc[i].UNIQUE_YEARS) & (~all_control.GRID.isin(case_control_grids))].compute()
+        matching = all_control.loc[(all_control.GENDER==cases.iloc[i].GENDER) & (all_control.AGE_YEARS==cases.iloc[i].AGE_YEARS) & (all_control.UNIQUE_YEARS==cases.iloc[i].UNIQUE_YEARS) & (~all_control.GRID.isin(case_control_grids))].copy()#.compute()
         matching['ab'] = abs(matching['RECORD_LENGTH_DAYS']-cases.iloc[i].RECORD_LENGTH_DAYS)
-        case_control_grids=case_control_grids.union(set(matching.sort_values(by='ab')[:num_controls]))
+        case_control_grids=case_control_grids.union(set(matching.sort_values(by='ab')[:num_controls].GRID))
     case_control_grids=case_control_grids.union(set(cases.GRID))
     return case_control_grids
 

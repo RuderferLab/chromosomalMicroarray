@@ -28,7 +28,7 @@ steps:
     4. Select best model from the pipeline, retrain it on the whole CC set, and predict on the frequent visitors set
 '''
 
-CENSOR=True
+CENSOR=False
 
 #To censor codes, needs GRID, CODE, and DATE columns
 def censor_codes(code_df, cma_df):
@@ -127,7 +127,7 @@ def main():
     phe_list.append('weight_sum')
     #Garbage collect time?
     gc.collect()
-    results_df, best_estimator, test_set_probs = cross_validation_pipeline_probabilistic.sklearn_pipeline(long_cc_df[phe_list], long_cc_df['CC_STATUS'].astype(int), cpu_num, 'random')
+    results_df, best_estimator, test_set_probs = cross_validation_pipeline_probabilistic.sklearn_pipeline(long_cc_df[phe_list], long_cc_df['CC_STATUS'].astype(int), cpu_num, 'grid')
     results_df.to_csv(param_out,index=False)
     test_set_probs.to_csv(probs_out, index=False)
     print('pipeline complete')

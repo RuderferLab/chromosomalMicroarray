@@ -164,6 +164,23 @@ def sklearn_pipeline(df, target, cpu_num, search_method):
                     'classify__subsample': [0.8, 1.0]
                 },
                 {
+                    'column_selector': [selectors[2]],
+                    'reduce_dim_1': reduce_dim_pca,
+                    'reduce_dim_2': reduce_dim_umap,
+                    'classify':[BernoulliNB()],
+                    'classify__alpha': [0, 1.0]
+                },
+                {
+                    'column_selector': [selectors[1]],
+                    'reduce_dim_1': reduce_dim_pca,
+                    'reduce_dim_2': reduce_dim_umap,
+                    'classify':[GaussianNB()]
+                },
+                {
+                    'column_selector': [selectors[0]],
+                    'classify':[GaussianNB()]
+                },
+                {
                     'column_selector': [selectors[0]],
                     'classify':[LogisticRegression(solver='lbfgs')],#, SVC(probability=True)],
                     'classify__C':[0.1, 1,10,100]
