@@ -10,6 +10,10 @@ def phewas_wide(code_df, code_list):
     results_df = pd.DataFrame()
     odds_list = []
     pval_list = []
+    not_present_control_list = []
+    not_present_case_list = []
+    present_control_list = []
+    present_case_list = []
     for code in code_list:
         present_case = code_df.loc[(code_df['CC_STATUS']==1)&(code_df[code]>0)].shape[0]
         present_control = code_df.loc[(code_df['CC_STATUS']==0)&(code_df[code]>0)].shape[0]
@@ -18,9 +22,22 @@ def phewas_wide(code_df, code_list):
         odds, pval = fisher_exact([[not_present_control, not_present_case],[present_control, present_case]])
         odds_list.append(odds)
         pval_list.append(pval)
+        not_present_control_list.append(not_present_control)
+        not_present_case_list.append(not_present_case)
+        present_control_list.append(present_control)
+        present_case_list.append(present_case)
+        #print('?')
+        #print(code)
+        #print(pval)
+        #print(odds)
+        #print('!!')
     results_df['code']=code_list
     results_df['odds_ratio']=odds_list
     results_df['pval']=pval_list
+    results_df['not_present_control']=not_present_control_list
+    results_df['not_present_case']=not_present_case_list
+    results_df['present_case']=present_case_list
+    results_df['present_control']=present_control_list
     return results_df
 
 
@@ -39,6 +56,6 @@ if __name__=="__main__":
     for line in phe_list_file:
         phe_list.append(line.strip('\n'))
 
-    res=phewas_wide(case_control_df[phe_list+'CC_STATUS'], phe_list)
+    res=phewas_wide(case_control_df[phe_list+['CC_STATUS']], phe_list)
     
-    res.to_csv(out)
+    res.to_csv(out, index=False)
