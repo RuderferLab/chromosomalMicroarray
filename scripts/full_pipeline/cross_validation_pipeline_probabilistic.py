@@ -299,13 +299,16 @@ def sklearn_pipeline(df, target, cpu_num, search_method):
     print('\n')
     print(search.best_score_)
     print('\n')
+    #Calibrate best estimator
+    cal_clf = CalibratedClassifierCV(best_est, method='isotonic', cv=3)
+    cal_clf.fit(X_train, y_train)
     #Fit pipeline to test set with best parameters from above search
-    pipe.set_params(**search.best_params_)
-    pipe.fit(X_train, y_train)
+    #pipe.set_params(**search.best_params_)
+    #pipe.fit(X_train, y_train)
     print('\n')
     print('Results of best estimator chosen by CV process:\n')
-    preds=pipe.predict(X_test)
-    probs = pipe.predict_proba(X_test)[:,1]
+    preds= cal_clf.predict(X_test)#best_est.predict(X_test)#pipe.predict(X_test)
+    probs = cal_clf.predict_proba(X_test)#best_est.predict_proba(X_test)[:,1]#pipe.predict_proba(X_test)[:,1]
     test_ret_df = pd.DataFrame()
     test_ret_df['target'] = y_test
     test_ret_df['case_probs'] = probs
@@ -313,7 +316,7 @@ def sklearn_pipeline(df, target, cpu_num, search_method):
     total = time.time()-start
     print('Elapsed time:')
     print(total)
-    return final_results_df, best_est, test_ret_df
+    return final_results_df, cal_clf, test_ret_df
 
 def calibrate_and_train(features, target, clf):
     X_train, X_test, y_train, y_test = train_test_split(features, target, test_size=0.20)
