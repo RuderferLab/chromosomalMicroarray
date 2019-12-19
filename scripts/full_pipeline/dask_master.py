@@ -71,29 +71,34 @@ def main():
     ##demo_df['CC_STATUS']=0
     ##demo_df.loc[demo_df.GRID.isin(cma_df.GRID),'CC_STATUS']=1
     #Match controls 4:1 with the cma recipients
-    print('Beginning to match controls')
-    cc_grids = list(match_controls.dask_cc_match(demo_df, cma_df.GRID.unique(), 4))
-    print(len(cc_grids))
-    print(cma_df.GRID.unique().shape)
-    print('matched controls')
-    print("--- %s seconds ---" % (time.time() - start_time))
-    #Create long df for case control set
-    phecodes.columns=['PERSON_ID','GRID', 'CODE','DATE']
-    cc_phecodes = phecodes.loc[phecodes.GRID.isin(cc_grids)].compute().reset_index(drop=True)
-    print('selected cc_phecodes')
-    print("--- %s seconds ---" % (time.time() - start_time))
-    if CENSOR:
-        cc_phecodes = censor_codes(cc_phecodes, cma_df)
-        print('censored cc codes')
+    if match_controls = True:
+        print('Beginning to match controls')
+        cc_grids = list(match_controls.dask_cc_match(demo_df, cma_df.GRID.unique(), 4))
+        print(len(cc_grids))
+        print(cma_df.GRID.unique().shape)
+        print('matched controls')
         print("--- %s seconds ---" % (time.time() - start_time))
-    cc_phecodes_group = cc_phecodes.groupby(['GRID','CODE']).size().unstack().fillna(0).astype(int).reset_index()
-    long_cc_df = demo_df.loc[demo_df.GRID.isin(cc_grids)].copy().merge(cc_phecodes_group, on="GRID", how="left")
-    long_cc_df[cc_phecodes.CODE.unique()] = long_cc_df[cc_phecodes.CODE.unique()].fillna(0).astype(int)
-    long_cc_df['CC_STATUS']=0
-    long_cc_df.loc[long_cc_df.GRID.isin(cma_df.GRID),'CC_STATUS']=1
-    print('Created long cc df')
-    print("--- %s seconds ---" % (time.time() - start_time))
-    long_cc_df.to_csv(cc_out, index=False)
+        #Create long df for case control set
+        phecodes.columns=['PERSON_ID','GRID', 'CODE','DATE']
+        cc_phecodes = phecodes.loc[phecodes.GRID.isin(cc_grids)].compute().reset_index(drop=True)
+        print('selected cc_phecodes')
+        print("--- %s seconds ---" % (time.time() - start_time))
+        if CENSOR:
+            cc_phecodes = censor_codes(cc_phecodes, cma_df)
+            print('censored cc codes')
+            print("--- %s seconds ---" % (time.time() - start_time))
+        cc_phecodes_group = cc_phecodes.groupby(['GRID','CODE']).size().unstack().fillna(0).astype(int).reset_index()
+        long_cc_df = demo_df.loc[demo_df.GRID.isin(cc_grids)].copy().merge(cc_phecodes_group, on="GRID", how="left")
+        long_cc_df[cc_phecodes.CODE.unique()] = long_cc_df[cc_phecodes.CODE.unique()].fillna(0).astype(int)
+        long_cc_df['CC_STATUS']=0
+        long_cc_df.loc[long_cc_df.GRID.isin(cma_df.GRID),'CC_STATUS']=1
+        print('Created long cc df')
+        print("--- %s seconds ---" % (time.time() - start_time))
+        long_cc_df.to_csv(cc_out, index=False)
+    else:
+        print('loading in prematched controls in long_cc_df dataframe')
+        long_cc_df = pd.read_csv(sys.argv[10])
+        cc_grids = long_cc_df.GRID.values
     #Create long df for fv
     fv_phecodes = phecodes.loc[phecodes.GRID.isin(demo_df.loc[demo_df.FV_STATUS==1,'GRID'])].compute().reset_index(drop=True)
     fv_phecodes_group = fv_phecodes.groupby(['GRID','CODE']).size().unstack().fillna(0).astype(int).reset_index()
@@ -127,7 +132,7 @@ def main():
     phe_list.append('weight_sum')
     #Garbage collect time?
     gc.collect()
-    results_df, best_estimator, test_set_probs = cross_validation_pipeline_probabilistic.sklearn_pipeline(long_cc_df[phe_list], long_cc_df['CC_STATUS'].astype(int), cpu_num, 'grid')
+    results_df, best_estimator, test_set_probs = cross_validation_pipeline_probabilistic.sklearn_pipeline(long_cc_df[phe_list], long_cc_df['CC_STATUS'].astype(int), cpu_num, 'random')
     results_df.to_csv(param_out,index=False)
     test_set_probs.to_csv(probs_out, index=False)
     print('pipeline complete')
