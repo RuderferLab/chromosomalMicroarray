@@ -218,21 +218,24 @@ def sklearn_pipeline(df, target, cpu_num, search_method):
                     'reduce_dim_1': reduce_dim_pca,
                     'reduce_dim_2': reduce_dim_umap,
                     'classify':[RandomForestClassifier()],
-                    'classify__max_depth': sp_randint(50,500),
-                    'classify__min_samples_leaf': sp_randint(1,10),
-                    'classify__min_samples_split': sp_randint(2,24),
-                    'classify__n_estimators': sp_randint(200,800)
+                    'classify__max_depth': sp_randint(3,250),
+                    'classify__min_samples_leaf': sp_randint(1,200),
+                    'classify__max_leaf_nodes':sp_randint(10,200),
+                    'classify__min_samples_split': sp_randint(2,200),
+                    'classify__n_estimators': sp_randint(200,1100)
                 },
                 {
                     'column_selector': [selectors[1], selectors[2]],
                     'reduce_dim_1': reduce_dim_pca,
                     'reduce_dim_2': reduce_dim_umap,
                     'classify':[GradientBoostingClassifier()],
-                    'classify__max_depth': sp_randint(50,500),
-                    'classify__min_samples_leaf': sp_randint(1,10), 
-                    'classify__min_samples_split': sp_randint(2,24),
-                    'classify__n_estimators': sp_randint(200,800),
-                    'classify__subsample': [0.3,0.5,0.8,1.0]
+                    'classify__learning_rate': st.reciprocal(1e-3, 5e-1),
+                    'classify__max_depth': sp_randint(3,250),
+                    'classify__max_leaf_nodes':sp_randint(10,200),
+                    'classify__min_samples_leaf': sp_randint(1,200), 
+                    'classify__min_samples_split': sp_randint(2,200),
+                    'classify__n_estimators': sp_randint(200,1100),
+                    'classify__subsample': st.uniform(0.5,0.5)
                 },
                 {
                     'column_selector': [selectors[1]],
@@ -255,19 +258,22 @@ def sklearn_pipeline(df, target, cpu_num, search_method):
                 {
                     'column_selector': [selectors[0]],
                     'classify':[GradientBoostingClassifier()],
-                    'classify__max_depth': sp_randint(50,500),
-                    'classify__min_samples_leaf': sp_randint(1,10),
-                    'classify__min_samples_split': sp_randint(2,24),
-                    'classify__n_estimators': sp_randint(200,800),
-                    'classify__subsample': [0.3,0.5,0.8,1.0]
+                    'classify__learning_rate': st.reciprocal(1e-3, 5e-1),
+                    'classify__max_depth': sp_randint(3,250),
+                    'classify__max_leaf_nodes':sp_randint(10,200),
+                    'classify__min_samples_leaf': sp_randint(1,200), 
+                    'classify__min_samples_split': sp_randint(2,200),
+                    'classify__n_estimators': sp_randint(200,1100),
+                    'classify__subsample': st.uniform(0.5,0.5)
                 },
                 {
                     'column_selector': [selectors[0]],
                     'classify':[RandomForestClassifier()],
-                    'classify__max_depth': sp_randint(50,500),
-                    'classify__min_samples_leaf': sp_randint(1,10),
-                    'classify__min_samples_split': sp_randint(2,24),
-                    'classify__n_estimators': sp_randint(200,800)
+                    'classify__max_depth': sp_randint(3,250),
+                    'classify__max_leaf_nodes':sp_randint(10,200),
+                    'classify__min_samples_leaf': sp_randint(1,200),
+                    'classify__min_samples_split': sp_randint(2,200),
+                    'classify__n_estimators': sp_randint(200,1100)
                 },
                 {
                     'column_selector': [selectors[0]],
@@ -284,7 +290,7 @@ def sklearn_pipeline(df, target, cpu_num, search_method):
     else:
         #number of iterations = number of settings to test
         #Total runs = n_iter*cv (4 in our case)
-        search = RandomizedSearchCV(pipe, cv=splits, scoring=score_custom, refit='f1', param_distributions=param_grid, n_jobs=cpu_num, pre_dispatch=2*cpu_num, return_train_score=False, n_iter=500)
+        search = RandomizedSearchCV(pipe, cv=splits, scoring=score_custom, refit='f1', param_distributions=param_grid, n_jobs=cpu_num, pre_dispatch=2*cpu_num, return_train_score=False, n_iter=5000)
     #Fit it all!
     print(search)
     print(pipe)
