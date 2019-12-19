@@ -65,13 +65,17 @@ def main():
     cpu_num = int(sys.argv[7])
     cc_out = sys.argv[8]
     probs_out = sys.argv[9]
+    mc = sys.argv[10]
+    match_controls = True
+    if mc = 'n':
+        match_controls = False
     print('Loaded args')
     print("--- %s seconds ---" % (time.time() - start_time))
     #Set cc_status (case control status) tag in demo_df to indicate which patients received a CMA
     ##demo_df['CC_STATUS']=0
     ##demo_df.loc[demo_df.GRID.isin(cma_df.GRID),'CC_STATUS']=1
     #Match controls 4:1 with the cma recipients
-    if match_controls = True:
+    if match_controls:
         print('Beginning to match controls')
         cc_grids = list(match_controls.dask_cc_match(demo_df, cma_df.GRID.unique(), 4))
         print(len(cc_grids))
@@ -97,7 +101,7 @@ def main():
         long_cc_df.to_csv(cc_out, index=False)
     else:
         print('loading in prematched controls in long_cc_df dataframe')
-        long_cc_df = pd.read_csv(sys.argv[10])
+        long_cc_df = pd.read_csv(sys.argv[11])
         cc_grids = long_cc_df.GRID.values
     #Create long df for fv
     fv_phecodes = phecodes.loc[phecodes.GRID.isin(demo_df.loc[demo_df.FV_STATUS==1,'GRID'])].compute().reset_index(drop=True)
