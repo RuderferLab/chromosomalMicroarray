@@ -157,6 +157,7 @@ def sklearn_pipeline(df, target, cpu_num, search_method):
                     'reduce_dim_1': reduce_dim_pca, 
                     'reduce_dim_2': reduce_dim_umap,
                     'classify':[GradientBoostingClassifier()],
+                    'classify__learning_rate': [0.01,0.1,0.2],
                     'classify__max_depth': [100, 150, 200],
                     'classify__min_samples_leaf': [1, 5],
                     'classify__min_samples_split': [2, 8],
@@ -188,6 +189,7 @@ def sklearn_pipeline(df, target, cpu_num, search_method):
                 {
                     'column_selector': [selectors[0]],
                     'classify':[GradientBoostingClassifier()],
+                    'classify__learning_rate': [0.01,0.1,0.2],
                     'classify__max_depth': [100, 150, 200],
                     'classify__min_samples_leaf': [1, 5],
                     'classify__min_samples_split': [2, 8],
@@ -203,6 +205,36 @@ def sklearn_pipeline(df, target, cpu_num, search_method):
                     'classify__n_estimators': [600]
                 }
             ]
+    elif search_method=='small_grid':
+        param_grid = [
+                {
+                    'column_selector': [selectors[1]],
+                    'classify':[LogisticRegression(solver='lbfgs')],
+                    'classify__C':[0.1, 1,10,100]
+                },
+                {
+                    'column_selector': [selectors[1]],
+                    'classify':[RandomForestClassifier()],
+                    'classify__max_depth': [100, 150, 200],
+                    'classify__min_samples_leaf': [1, 5],
+                    'classify__min_samples_split': [2, 8],
+                    'classify__n_estimators': [600]
+                },
+                {
+                    'column_selector': [selectors[1]],
+                    'classify':[GradientBoostingClassifier()],
+                    'classify__learning_rate': [0.01,0.1,0.2],
+                    'classify__max_depth': [100, 150, 200],
+                    'classify__min_samples_leaf': [1, 5],
+                    'classify__min_samples_split': [2, 8],
+                    'classify__n_estimators': [600],
+                    'classify__subsample': [0.8, 1.0]
+                },
+                {
+                    'column_selector': [selectors[1]],
+                    'classify':[GaussianNB()]
+                }
+                ]
     else:
         #random search
         param_grid = [
@@ -287,6 +319,10 @@ def sklearn_pipeline(df, target, cpu_num, search_method):
     score_custom = {'tp': make_scorer(tp), 'tn': make_scorer(tn), 'fp': make_scorer(fp), 'fn': make_scorer(fn), 'precision_micro': 'precision_micro', 'f1': 'f1', 'auc': 'roc_auc', 'brier_score_loss': 'brier_score_loss', 'neg_log_loss': 'neg_log_loss', 'ppv': make_scorer(ppv)}
     if search_method=='grid':
         search = GridSearchCV(pipe, cv=splits, scoring=score_custom, refit='f1', param_grid=param_grid, n_jobs=cpu_num, pre_dispatch=2*cpu_num, return_train_score=False)
+    elif search_method=='small_grid':
+        search = GridSearchCV(pipe, cv=splits,
+                scoring={'precision_micro': 'precision_micro', 'f1_micro': 'f1_micro'},
+                refit='f1_micro', param_grid=param_grid, n_jobs=cpu_num, pre_dispatch=2*cpu_num, return_train_score=False)
     else:
         #number of iterations = number of settings to test
         #Total runs = n_iter*cv (4 in our case)
@@ -294,7 +330,9 @@ def sklearn_pipeline(df, target, cpu_num, search_method):
     #Fit it all!
     print(search)
     print(pipe)
-    search.fit(X_train, y_train)
+    #print(X_train.drop('GRID',axis=1))
+    #print(select_all_but_last(X_train).drop('GRID',axis=1))
+    search.fit(X_train.drop('GRID',axis=1), y_train)
     final_results_df = pd.DataFrame(search.cv_results_)
     #final_results_df.to_csv(out, index=False)
     #Show best estimator and results
@@ -307,17 +345,27 @@ def sklearn_pipeline(df, target, cpu_num, search_method):
     print('\n')
     #Calibrate best estimator
     cal_clf = CalibratedClassifierCV(best_est, method='isotonic', cv=3)
-    cal_clf.fit(X_train, y_train)
+    cal_clf.fit(X_train.drop('GRID',axis=1), y_train)
     #Fit pipeline to test set with best parameters from above search
     #pipe.set_params(**search.best_params_)
     #pipe.fit(X_train, y_train)
     print('\n')
     print('Results of best estimator chosen by CV process:\n')
-    preds= cal_clf.predict(X_test)#best_est.predict(X_test)#pipe.predict(X_test)
-    probs = cal_clf.predict_proba(X_test)#best_est.predict_proba(X_test)[:,1]#pipe.predict_proba(X_test)[:,1]
+    preds = cal_clf.predict(X_test.drop('GRID',axis=1))
+    probs = cal_clf.predict_proba(X_test.drop('GRID',axis=1))
+    if search_method != 'small_grid':
+        probs = probs[:,1]
     test_ret_df = pd.DataFrame()
     test_ret_df['target'] = y_test
-    test_ret_df['case_probs'] = probs
+    if search_method == 'small_grid':
+        index = 0
+        for cls in cal_clf.classes_:
+            test_ret_df[cls+'_prob']=probs[:,index]
+            index+=1
+    else:
+        test_ret_df['case_probs'] = probs
+    test_ret_df['preds'] = preds
+    test_ret_df['GRID']=X_test['GRID']
     print(classification_report(y_test, preds))
     total = time.time()-start
     print('Elapsed time:')
@@ -332,20 +380,39 @@ def calibrate_and_train(features, target, clf):
     #Returns only case probabilities and targets
     return (probs[:, 1], y_test)
 
-if __name__=='__main__':
-    df = pd.read_csv(sys.argv[1], dtype={'location':str, 'Result':str})
-    #Drop rows which have no demographic info
-    df=df.drop(df[df.BIRTH_DATETIME=='0'].index)
-    phecodes = pd.read_csv(sys.argv[2], dtype=str)
+def run_pipeline_matched_df():
+    #load in prematched cc df, weights file (for accessing in specified order), output, key for searching, and target
+    wide_df = pd.read_csv(sys.argv[1])
+    weight_df = pd.read_csv(sys.argv[2], dtype=str)
     out = sys.argv[3]
+    key = sys.argv[4]
+    target = sys.argv[5]
+    cpu_num = int(sys.argv[6])
+    #add dummy weight sum
+    wide_df['dummy_weight_sum']=0.0
+    #remove cheat codes
+    phe_list = [x for x in list(weight_df.PHECODE.unique()) if x in wide_df.columns and x not in ['758','758.1','759','759.1']]
+    frdf, cal_clf, test_ret_df = sklearn_pipeline(wide_df[['GRID']+phe_list+['dummy_weight_sum']], wide_df[target], cpu_num, key)
+    frdf.to_csv(out+'_'+target+'_final_results_df.csv',index=False)
+    test_ret_df.to_csv(out+'_'+target+'_test_set_df.csv',index=False)
+    from joblib import dump
+    dump(cal_clf, out+'_'+target+'_classfier.joblib')
+
+if __name__=='__main__':
+    run_pipeline_matched_df()
+    #df = pd.read_csv(sys.argv[1], dtype={'location':str, 'Result':str})
+    #Drop rows which have no demographic info
+    #df=df.drop(df[df.BIRTH_DATETIME=='0'].index)
+    #phecodes = pd.read_csv(sys.argv[2], dtype=str)
+    #out = sys.argv[3]
     #Binarize and get columns for phecodes
-    phe_list = [phe for phe in list(phecodes.PHECODE.unique()) if phe in df]
+    #phe_list = [phe for phe in list(phecodes.PHECODE.unique()) if phe in df]
     #phedf = df.loc[:, phe_list]
     #phedf[phedf>0] = 1
     #df[phe_list] = phedf
     #Run the pipeline
-    frdf, _ = sklearn_pipeline(df[phe_list+['weight_sum']], df['CC_STATUS'].astype(int))
-    frdf.to_csv(out, index=False)
+    #frdf, _ = sklearn_pipeline(df[phe_list+['weight_sum']], df['CC_STATUS'].astype(int))
+    #frdf.to_csv(out, index=False)
     #######
     #Run process for dimensionality reduction
     #pc_emb,_ = create_pc_embedding(df, phe_list, 50)

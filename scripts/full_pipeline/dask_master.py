@@ -7,6 +7,8 @@ import match_controls
 import time
 import cross_validation_pipeline_probabilistic
 import create_weight_df
+from sklearn.metrics import confusion_matrix
+from sklearn.metrics import classification_report
 
 '''
 Plan: take all parts of full pipeline, go from start (creaing case control set) to end (selecting best model, predicting on the frequent visitors)
@@ -67,7 +69,7 @@ def main():
     probs_out = sys.argv[9]
     mc = sys.argv[10]
     match_controls = True
-    if mc = 'n':
+    if mc == 'n':
         match_controls = False
     print('Loaded args')
     print("--- %s seconds ---" % (time.time() - start_time))
@@ -75,6 +77,7 @@ def main():
     ##demo_df['CC_STATUS']=0
     ##demo_df.loc[demo_df.GRID.isin(cma_df.GRID),'CC_STATUS']=1
     #Match controls 4:1 with the cma recipients
+    phecodes.columns = ['PERSON_ID','GRID','CODE','DATE']
     if match_controls:
         print('Beginning to match controls')
         cc_grids = list(match_controls.dask_cc_match(demo_df, cma_df.GRID.unique(), 4))
@@ -83,7 +86,7 @@ def main():
         print('matched controls')
         print("--- %s seconds ---" % (time.time() - start_time))
         #Create long df for case control set
-        phecodes.columns=['PERSON_ID','GRID', 'CODE','DATE']
+        #phecodes.columns=['PERSON_ID','GRID', 'CODE','DATE']
         cc_phecodes = phecodes.loc[phecodes.GRID.isin(cc_grids)].compute().reset_index(drop=True)
         print('selected cc_phecodes')
         print("--- %s seconds ---" % (time.time() - start_time))
@@ -136,7 +139,7 @@ def main():
     phe_list.append('weight_sum')
     #Garbage collect time?
     gc.collect()
-    results_df, best_estimator, test_set_probs = cross_validation_pipeline_probabilistic.sklearn_pipeline(long_cc_df[phe_list], long_cc_df['CC_STATUS'].astype(int), cpu_num, 'random')
+    results_df, best_estimator, test_set_probs = cross_validation_pipeline_probabilistic.sklearn_pipeline(long_cc_df[['GRID']+phe_list], long_cc_df['CC_STATUS'].astype(int), cpu_num, 'grid')
     results_df.to_csv(param_out,index=False)
     test_set_probs.to_csv(probs_out, index=False)
     print('pipeline complete')
@@ -156,6 +159,16 @@ def main():
     fv_df[['GRID','case_prob']].to_csv(fv_out,index=False)
     print('wrote results')
     print("--- %s seconds ---" % (time.time() - start_time))
+    #Write confusion matrices
+    print('classification report for test set: ')
+    print(classification_report(test_set_probs['target'],test_set_probs['preds']))
+    print('confusion matrix for test set: ')
+    print(confusion_matrix(test_set_probs['target'],test_set_probs['preds']))
+    tn_test, fp_test, fn_test, tp_test = confusion_matrix(test_set_probs['target'], test_set_probs['preds']).ravel()
+    print('true positives: '+str(tp_test))
+    print('true negatives: '+str(tn_test))
+    print('false positives: '+str(fp_test))
+    print('false negatives: '+str(fn_test))
 
 if __name__=='__main__':
     main()
