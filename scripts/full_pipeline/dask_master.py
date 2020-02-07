@@ -31,6 +31,7 @@ steps:
 '''
 
 CENSOR=False
+TO_LOG = True
 
 #To censor codes, needs GRID, CODE, and DATE columns
 def censor_codes(code_df, cma_df):
@@ -80,7 +81,10 @@ def main():
     phecodes.columns = ['PERSON_ID','GRID','CODE','DATE']
     if match_controls:
         print('Beginning to match controls')
-        cc_grids = list(match_controls.dask_cc_match(demo_df, cma_df.GRID.unique(), 4))
+        cc_grids, ab_vals = match_controls.dask_cc_match(demo_df, cma_df.GRID.unique(), 4, TO_LOG)
+        cc_grids = list(cc_grids)
+        if TO_LOG:
+            ab_vals.to_csv(cc_out+'absolute_distance_values_cases.csv',index=False)
         print(len(cc_grids))
         print(cma_df.GRID.unique().shape)
         print('matched controls')
