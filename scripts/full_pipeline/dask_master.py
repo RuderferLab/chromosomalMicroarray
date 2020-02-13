@@ -31,7 +31,7 @@ steps:
 '''
 
 CENSOR=False
-TO_LOG = True
+TO_LOG=True
 
 #To censor codes, needs GRID, CODE, and DATE columns
 def censor_codes(code_df, cma_df):
@@ -69,6 +69,7 @@ def main():
     cc_out = sys.argv[8]
     probs_out = sys.argv[9]
     mc = sys.argv[10]
+    congenital_anomaly_codes = list(pd.read_csv(sys.argv[12]).PHECODE)
     match_controls = True
     if mc == 'n':
         match_controls = False
@@ -121,13 +122,7 @@ def main():
     weights = pd.Series(weight_df.WEIGHT.values,index=weight_df.PHECODE.astype(str)).to_dict()
     print('loaded weights')
     print("--- %s seconds ---" % (time.time() - start_time))
-    #drop cogenital anomalies (would be cheating to use them)
-    for code in ['758', '758.1', '759', '759.1']:
-        if code in long_cc_df:
-            long_cc_df[code]=0
-        if code in long_fv_df:
-            long_fv_df[code]=0
-    phe_list = list(weight_df.PHECODE.unique())
+    phe_list = [x for x in list(weight_df.PHECODE.unique()) if x in long_cc_df.columns and x not in congenital_anomaly_codes]
     anc_child_dict = create_weight_df.create_ancestry(phe_list)
     leaf_select_cc_df = create_weight_df.leaf_select_codes(long_cc_df, anc_child_dict, phe_list)
     leaf_select_fv_df = create_weight_df.leaf_select_codes(long_fv_df, anc_child_dict, phe_list)
@@ -139,7 +134,7 @@ def main():
     print('summed weights; performed ancestry analysis w/codes')
     print("--- %s seconds ---" % (time.time() - start_time))
     #Run sklearn pipeline for grid search
-    phe_list = [x for x in list(weight_df.PHECODE.unique()) if x in long_cc_df.columns]
+    #phe_list = [x for x in list(weight_df.PHECODE.unique()) if x in long_cc_df.columns]
     phe_list.append('weight_sum')
     #Garbage collect time?
     gc.collect()

@@ -127,8 +127,8 @@ def sklearn_pipeline(df, target, cpu_num, search_method):
     #Define the pipeline
     print('Beginning pipeline')
     start = time.time()
-    reduce_dim_pca = [PCA(50), PCA(75), PCA(100), PCA(), None]
-    reduce_dim_umap = [umap.UMAP(n_components=5), umap.UMAP(n_components=10), umap.UMAP(n_components=15), None]
+    reduce_dim_pca = [PCA(100), None]
+    reduce_dim_umap = [umap.UMAP(n_components=10), None]
     #First selector is only the last column, second selector is the selector for all columns but the last column
     selectors = [FunctionTransformer(select_last, validate=True), FunctionTransformer(select_all_but_last, validate=True), FunctionTransformer(select_all_but_last_and_binarize, validate=True)]
     pipe = Pipeline(steps=[('column_selector', None), ('reduce_dim_1', None), ('reduce_dim_2', None), ('classify', None)])

@@ -53,19 +53,32 @@ def new_cc_match(full_pop, cases, num_controls):
     case_control_df=case_control_df.append(full_pop.loc[full_pop.GRID.isin(cases.GRID)])
     return case_control_df
 
+#Full_pop needs GENDER, RACE, AGE_YEARS, UNIQUE_YEARS, gclin, genet, RECORD_LENGTH_DAYS, and GRID
 def dask_cc_match(full_pop, case_grids, num_controls, log):
     all_control = full_pop.loc[~full_pop.GRID.isin(case_grids)]
     cases = full_pop.loc[full_pop.GRID.isin(case_grids)].copy().reset_index(drop=True)#.compute().reset_index(drop=True)
     case_control_grids = set()
     control_ab = pd.DataFrame()
+    unmatched = []
     for i in range(len(cases)):
         #all_control['ab'] = abs(all_control['RECORD_LENGTH_DAYS']-cases.iloc[i].RECORD_LENGTH_DAYS)
-        matching = all_control.loc[(all_control.GENDER==cases.iloc[i].GENDER) & (all_control.RACE==cases.iloc[i].RACE) & (all_control.AGE_YEARS==cases.iloc[i].AGE_YEARS) & (all_control.UNIQUE_YEARS==cases.iloc[i].UNIQUE_YEARS) & (~all_control.GRID.isin(case_control_grids))].copy()#.compute()
+        matching = all_control.loc[(all_control.GENDER==cases.iloc[i].GENDER) & (all_control.RACE==cases.iloc[i].RACE) & (all_control.AGE_YEARS==cases.iloc[i].AGE_YEARS) & (all_control.UNIQUE_YEARS==cases.iloc[i].UNIQUE_YEARS) & (all_control.gclin==0) & (all_control.genet==0) & (~all_control.GRID.isin(case_control_grids))].copy()#.compute()
         matching['ab'] = abs(matching['RECORD_LENGTH_DAYS']-cases.iloc[i].RECORD_LENGTH_DAYS)
+        #remove any matching over 365 ab
+        matching = matching.loc[matching.ab<365]
+        if matching.shape[0]<num_controls:
+            #tracking the case individuals who don't have at least num_controls matching individuals
+            unmatched.append(cases.iloc[i].GRID)
+        else:
+            #Add the controls to the set if there are at least 4 matching ones
+            case_control_grids=case_control_grids.union(set(matching.sort_values(by='ab')[:num_controls].GRID))
         if log:
-            control_ab=control_ab.append(matching[['GRID','ab']].sort_values(by='ab')[:num_controls])
-        case_control_grids=case_control_grids.union(set(matching.sort_values(by='ab')[:num_controls].GRID))
+            to_add = matching[['GRID','ab']].sort_values(by='ab')[:num_controls]
+            to_add['matching_grid'] = cases.iloc[i].GRID
+            control_ab=control_ab.append(to_add)
     case_control_grids=case_control_grids.union(set(cases.GRID))
+    #Remove unmatched cases
+    case_control_grids = [x for x in case_control_grids if x not in unmatched]
     return case_control_grids, control_ab
 
 #fullpop cases out
