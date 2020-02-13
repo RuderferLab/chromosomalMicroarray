@@ -1,4 +1,5 @@
 import pandas as pd
+import numpy as np
 
 #includes itself as a child
 def is_child_present(grid, phecode, indiv_pres, key, anc_ch):
@@ -41,8 +42,24 @@ def rollup(phe_path, child_anc_path):
             #This is because any time a child is found, each of it's parents are incremented
             #Therefore this individual has already been counted in the prevalence for this code, since a child of this code has been counted
             indiv_pres[phecodes.iloc[i].GRID][phecodes.iloc[i].PHECODE] = True
-    return prev_dict
+    return prev_dict, phecodes.GRID.unique().shape[0]
 
+def create_weights(prev_dict, total_pop):
+    prev = pd.DataFrame()
+    prev['codes'] = prev_dict.keys()
+    prev['counts'] = prev_dict.values()
+    prev['inv_prevalence'] = total_pop/prev['counts']
+    #np.log is ln
+    prev['ln'] = np.log(prev['inv_prevalence'])
+    return prev
 
+'''
+args:
+sys.argv[1] = path to phecodes (frequent visitors)
+sys.argv[2] = path to ancestor to child key for phecodes
+sys.argv[3] = path to output
+'''
 if __name__=='__main__':
-    prev=rollup(sys.argv[1], sys.argv[2])
+    prev_dict, total_pop = rollup(sys.argv[1], sys.argv[2])
+    prev_df = create_weights(prev_dict, total_pop)
+    prev_df.to_csv(sys.argv[3])
