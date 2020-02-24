@@ -127,7 +127,7 @@ def sklearn_pipeline(df, target, cpu_num, search_method):
     #Define the pipeline
     print('Beginning pipeline')
     start = time.time()
-    reduce_dim_pca = [PCA(100), None]
+    reduce_dim_pca = [PCA(.95), None]
     reduce_dim_umap = [umap.UMAP(n_components=10), None]
     #First selector is only the last column, second selector is the selector for all columns but the last column
     selectors = [FunctionTransformer(select_last, validate=True), FunctionTransformer(select_all_but_last, validate=True), FunctionTransformer(select_all_but_last_and_binarize, validate=True)]
@@ -316,9 +316,9 @@ def sklearn_pipeline(df, target, cpu_num, search_method):
     X_train, X_test, y_train, y_test = train_test_split(df, target, test_size=0.20)
     #create grid search cv with the above param_grid
     splits = KFold(n_splits=4, shuffle=True)
-    score_custom = {'tp': make_scorer(tp), 'tn': make_scorer(tn), 'fp': make_scorer(fp), 'fn': make_scorer(fn), 'precision_micro': 'precision_micro', 'f1': 'f1', 'auc': 'roc_auc', 'brier_score_loss': 'brier_score_loss', 'neg_log_loss': 'neg_log_loss', 'ppv': make_scorer(ppv)}
+    score_custom = {'tp': make_scorer(tp), 'tn': make_scorer(tn), 'fp': make_scorer(fp), 'fn': make_scorer(fn), 'precision_micro': 'precision_micro', 'f1': 'f1', 'auc': 'roc_auc', 'brier_score_loss': 'brier_score_loss', 'neg_log_loss': 'neg_log_loss', 'ppv': make_scorer(ppv), 'average_precision': 'average_precision'}
     if search_method=='grid':
-        search = GridSearchCV(pipe, cv=splits, scoring=score_custom, refit='f1', param_grid=param_grid, n_jobs=cpu_num, pre_dispatch=2*cpu_num, return_train_score=False)
+        search = GridSearchCV(pipe, cv=splits, scoring=score_custom, refit='average_precision', param_grid=param_grid, n_jobs=cpu_num, pre_dispatch=2*cpu_num, return_train_score=False)
     elif search_method=='small_grid':
         search = GridSearchCV(pipe, cv=splits,
                 scoring={'precision_micro': 'precision_micro', 'f1_micro': 'f1_micro'},
