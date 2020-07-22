@@ -388,15 +388,16 @@ def run_pipeline_matched_df():
     key = sys.argv[4]
     target = sys.argv[5]
     cpu_num = int(sys.argv[6])
+    cog_anom = list(pd.read_csv(sys.argv[7], dtype=str).PHECODE)
     #add dummy weight sum
     wide_df['dummy_weight_sum']=0.0
     #remove cheat codes
-    phe_list = [x for x in list(weight_df.PHECODE.unique()) if x in wide_df.columns and x not in ['758','758.1','759','759.1']]
+    phe_list = [x for x in list(weight_df.PHECODE.unique()) if x in wide_df.columns and x not in cog_anom]# ['758','758.1','759','759.1']]
     frdf, cal_clf, test_ret_df = sklearn_pipeline(wide_df[['GRID']+phe_list+['dummy_weight_sum']], wide_df[target], cpu_num, key)
-    frdf.to_csv(out+'_'+target+'_final_results_df.csv',index=False)
-    test_ret_df.to_csv(out+'_'+target+'_test_set_df.csv',index=False)
+    frdf.to_csv(out+'_'+target+'_final_results_df_no_cog_anom.csv',index=False)
+    test_ret_df.to_csv(out+'_'+target+'_test_set_df_no_cog_anom.csv',index=False)
     from joblib import dump
-    dump(cal_clf, out+'_'+target+'_classfier.joblib')
+    dump(cal_clf, out+'_'+target+'_classfier_no_cog_anom.joblib')
 
 if __name__=='__main__':
     run_pipeline_matched_df()
