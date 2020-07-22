@@ -22,7 +22,7 @@ def create_ancestry(codes):
     #Now have a key matching each ancestor code to the list of all of the child codes belonging to it
     anc_codes = []
     child_codes = []
-    for k, v in anc_key:
+    for k, v in anc_key.items():
         for code in v:
             anc_codes.append(k)
             child_codes.append(code)
@@ -32,6 +32,6 @@ def create_ancestry(codes):
 
 if __name__=='__main__':
     #load in dataframe of all phecodes present -- phecodes column labelled PHECODE
-    df = pd.read_csv(sys.argv[1], dtype=str)
+    df = pd.read_csv(sys.argv[1], dtype={'PHECODE':str})
     ancestry_df = create_ancestry(list(df.PHECODE.unique()))
     ancestry_df.to_csv(sys.argv[2], index=False)
