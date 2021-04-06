@@ -14,6 +14,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 
 #args
+#cc_phecodes should be the weights list
 ## cc_df freq_vis_df cc_phecodes out clf_out
 if __name__=='__main__':
     #load in dataframe of cc
@@ -30,7 +31,7 @@ if __name__=='__main__':
     #Check shape difference after removal
     print(fv_df.shape)
     #fit random forest model with predetermined hyperparams on CC
-    clf = RandomForestClassifier(max_depth=150, min_samples_leaf=1, min_samples_split=4, n_estimators=600)
+    clf = RandomForestClassifier(max_depth=200, min_samples_leaf=1, min_samples_split=8, n_estimators=600)
     #clf = RandomForestClassifier(max_depth=150, min_samples_leaf=1, min_samples_split=4, n_estimators=100)
     #clf = RandomForestClassifier(max_depth=150, min_samples_leaf=1, min_samples_split=8, n_estimators=150)
     ###clf = RandomForestClassifier(max_depth=100, min_samples_leaf=1, min_samples_split=8, n_estimators=100)
@@ -39,8 +40,13 @@ if __name__=='__main__':
     cc_df=cc_df.drop(cc_df[cc_df.BIRTH_DATETIME=='0'].index)
     cc_phe_list = [phe for phe in list(cc_phecodes.PHECODE.unique()) if phe in cc_df]
     cc_phedf = cc_df.loc[:, cc_phe_list]
-    cc_phedf[cc_phedf>0] = 1
+    #binarize
+    #cc_phedf[cc_phedf>0] = 1
     cc_df[cc_phe_list] = cc_phedf
+    #remove 758 and 759
+    for c in ['758', '758.1', '759', '759.1']:
+        if c in cc_df:
+            cc_df[c]=0
     #shuffle
     cc_df = cc_df.sample(frac=1)
     #Sort cc_df columns
@@ -48,13 +54,14 @@ if __name__=='__main__':
     #actually fit
     clf.fit(cc_df[cc_phe_list], cc_df['CC_STATUS'].astype(int))
     #Get freq_vis in proper format (binary matrix), with only phecodes which are in both dfs (can't predict on phecodes we haven't seen before in the training set)
-    fv_df = fv_df.drop(fv_df[fv_df.BIRTH_DATETIME=='0'].index)
+    #fv_df = fv_df.drop(fv_df[fv_df.BIRTH_DATETIME=='0'].index)
     #fv_phe_list = [phe for phe in list(fv_phecodes.CODE.unique()) if phe in fv_df and phe in cc_df]
     #print(fv_phe_list)
     #print('test for missing columns: In CC set but not in fv set')
     #print([v for v in cc_phe_list if v not in fv_phe_list])
     fv_phedf = fv_df.loc[:, cc_phe_list]
-    fv_phedf[fv_phedf>0] = 1
+    #binarize
+    #fv_phedf[fv_phedf>0] = 1
     print('compare cc_phe_list to fv_df to fv_df[cc_phe_list]')
     print(cc_phe_list)
     print(fv_df.head())

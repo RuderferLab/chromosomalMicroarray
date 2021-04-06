@@ -299,7 +299,7 @@ def sklearn_pipeline(df, target, cpu_num, search_method):
     if search_method == 'small_grid':
         index = 0
         for cls in cal_clf.classes_:
-            test_ret_df[cls+'_prob']=probs[:,index]
+            test_ret_df[str(cls)+'_prob']=probs[:,index]
             index+=1
     else:
         test_ret_df['case_probs'] = probs

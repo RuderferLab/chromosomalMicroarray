@@ -10,4 +10,4 @@
 
 module load Anaconda3
 
-python ../group_large_codes.py /data/ruderferlab/projects/sd/data/icd.csv ../../files/grouped_icd_size.csv
+python ../group_large_codes.py /data/ruderferlab/projects/sd/data/icd.csv ICD10CM ../../files/grouped_icd10_size.csv
